@@ -29,10 +29,26 @@ This MCP server provides access to all major Siigo API endpoints:
 
 ## Installation
 
+### Option 1: NPX (Recommended - No Installation Required)
+```bash
+# Run directly with npx - downloads and runs the latest version
+npx siigo-mcp-server
+```
+
+### Option 2: Global Installation
+```bash
+# Install globally
+npm install -g siigo-mcp-server
+
+# Then run
+siigo-mcp
+```
+
+### Option 3: Local Development/Building from Source
 1. Clone this repository:
 ```bash
-git clone <repository-url>
-cd siigo-mcp
+git clone https://github.com/jdlar/siigo-mcp-server.git
+cd siigo-mcp-server
 ```
 
 2. Install dependencies:
@@ -54,8 +70,8 @@ cp .env.example .env
 ```bash
 SIIGO_USERNAME=your_siigo_username
 SIIGO_ACCESS_KEY=your_siigo_access_key
-SIIGO_BASE_URL=https://api.siigo.com
 SIIGO_PARTNER_ID=your_app_name
+SIIGO_BASE_URL=https://api.siigo.com
 ```
 
 ## Configuration
@@ -63,12 +79,12 @@ SIIGO_PARTNER_ID=your_app_name
 ### Required Environment Variables
 
 - `SIIGO_USERNAME`: Your Siigo API username
-- `SIIGO_ACCESS_KEY`: Your Siigo API access key
+- `SIIGO_ACCESS_KEY`: Your Siigo API access key  
+- `SIIGO_PARTNER_ID`: Partner ID for API identification (3-100 alphanumeric characters, no spaces or special characters)
 
 ### Optional Environment Variables
 
 - `SIIGO_BASE_URL`: API base URL (defaults to `https://api.siigo.com`)
-- `SIIGO_PARTNER_ID`: Partner ID for API identification (defaults to `siigo-mcp-server`)
 
 ### Getting Siigo API Credentials
 
@@ -81,13 +97,24 @@ SIIGO_PARTNER_ID=your_app_name
 
 ### Running the Server
 
-Start the MCP server:
+#### Using NPX (Recommended)
 ```bash
-npm start
+# Set environment variables and run
+SIIGO_USERNAME=your_username SIIGO_ACCESS_KEY=your_key SIIGO_PARTNER_ID=your_app npx siigo-mcp-server
 ```
 
-For development with auto-reload:
+#### Using Global Installation
 ```bash
+# Set environment variables and run
+SIIGO_USERNAME=your_username SIIGO_ACCESS_KEY=your_key SIIGO_PARTNER_ID=your_app siigo-mcp
+```
+
+#### For Development (from source)
+```bash
+# Start the server
+npm start
+
+# Or for development with auto-reload
 npm run dev
 ```
 
@@ -101,12 +128,14 @@ The server provides 40+ tools for interacting with the Siigo API. Here are some 
 - `siigo_create_product` - Create a new product
 - `siigo_update_product` - Update an existing product
 - `siigo_delete_product` - Delete a product
+- `siigo_search_products` - **NEW!** Search products by code, name, or reference
 
 #### Customers
 - `siigo_get_customers` - List all customers
 - `siigo_get_customer` - Get a specific customer by ID
 - `siigo_create_customer` - Create a new customer
 - `siigo_update_customer` - Update an existing customer
+- `siigo_search_customers` - **NEW!** Search customers by identification, name, or type
 
 #### Invoices
 - `siigo_get_invoices` - List all invoices
@@ -129,6 +158,29 @@ The server provides 40+ tools for interacting with the Siigo API. Here are some 
 - `siigo_get_accounts_payable` - Get accounts payable report
 
 ### Example Usage
+
+#### Search for Customers
+```json
+{
+  "name": "siigo_search_customers",
+  "arguments": {
+    "identification": "12345",
+    "type": "Customer",
+    "page_size": 10
+  }
+}
+```
+
+#### Search for Products
+```json
+{
+  "name": "siigo_search_products",
+  "arguments": {
+    "name": "laptop",
+    "page_size": 20
+  }
+}
+```
 
 #### Creating a Product
 ```json

@@ -79,6 +79,70 @@ export class SiigoClient {
     return this.makeRequest<any>('DELETE', `/v1/products/${id}`);
   }
 
+  // Enhanced product search functionality
+  async searchProducts(searchParams: {
+    code?: string;
+    name?: string;
+    reference?: string;
+    page?: number;
+    page_size?: number;
+  }): Promise<SiigoApiResponse<SiigoProduct>> {
+    // Build query parameters for search
+    const params: any = {};
+    
+    if (searchParams.page) params.page = searchParams.page;
+    if (searchParams.page_size) params.page_size = searchParams.page_size;
+    
+    // Fetch products and filter client-side
+    const response = await this.makeRequest<SiigoProduct>('GET', '/v1/products', undefined, params);
+    
+    // If no text-based filters, return the API response as-is
+    if (!searchParams.code && !searchParams.name && !searchParams.reference) {
+      return response;
+    }
+    
+    // Filter results based on search criteria
+    if (response.results) {
+      let filteredResults = response.results;
+      
+      // Filter by code (partial match)
+      if (searchParams.code) {
+        const searchCode = searchParams.code.toLowerCase();
+        filteredResults = filteredResults.filter(product => 
+          product.code?.toLowerCase().includes(searchCode)
+        );
+      }
+      
+      // Filter by name (partial match)
+      if (searchParams.name) {
+        const searchName = searchParams.name.toLowerCase();
+        filteredResults = filteredResults.filter(product => 
+          product.name?.toLowerCase().includes(searchName)
+        );
+      }
+      
+      // Filter by reference (partial match)
+      if (searchParams.reference) {
+        const searchRef = searchParams.reference.toLowerCase();
+        filteredResults = filteredResults.filter(product => 
+          product.reference?.toLowerCase().includes(searchRef)
+        );
+      }
+      
+      // Return filtered response
+      return {
+        ...response,
+        results: filteredResults,
+        pagination: response.pagination ? {
+          ...response.pagination,
+          total_results: filteredResults.length
+        } : undefined
+      };
+    }
+    
+    return response;
+  }
+
   // Customers endpoints
   async getCustomers(params?: { page?: number; page_size?: number; type?: string }): Promise<SiigoApiResponse<SiigoCustomer>> {
     return this.makeRequest<SiigoCustomer>('GET', '/v1/customers', undefined, params);
@@ -94,6 +158,74 @@ export class SiigoClient {
 
   async updateCustomer(id: string, customer: Partial<SiigoCustomer>): Promise<SiigoApiResponse<SiigoCustomer>> {
     return this.makeRequest<SiigoCustomer>('PUT', `/v1/customers/${id}`, customer);
+  }
+
+  // Enhanced customer search functionality
+  async searchCustomers(searchParams: {
+    identification?: string;
+    name?: string;
+    type?: 'Customer' | 'Supplier' | 'Other';
+    page?: number;
+    page_size?: number;
+  }): Promise<SiigoApiResponse<SiigoCustomer>> {
+    // Build query parameters for search
+    const params: any = {};
+    
+    if (searchParams.page) params.page = searchParams.page;
+    if (searchParams.page_size) params.page_size = searchParams.page_size;
+    if (searchParams.type) params.type = searchParams.type;
+    
+    // For name and identification, we'll need to fetch and filter
+    // since Siigo API doesn't support direct text search parameters
+    const response = await this.makeRequest<SiigoCustomer>('GET', '/v1/customers', undefined, params);
+    
+    // If no text-based filters, return the API response as-is
+    if (!searchParams.identification && !searchParams.name) {
+      return response;
+    }
+    
+    // Filter results based on search criteria
+    if (response.results) {
+      let filteredResults = response.results;
+      
+      // Filter by identification (exact or partial match)
+      if (searchParams.identification) {
+        const searchId = searchParams.identification.toLowerCase();
+        filteredResults = filteredResults.filter(customer => 
+          customer.identification?.toLowerCase().includes(searchId)
+        );
+      }
+      
+      // Filter by name (partial match in any name field)
+      if (searchParams.name) {
+        const searchName = searchParams.name.toLowerCase();
+        filteredResults = filteredResults.filter(customer => {
+          if (customer.name) {
+            // Check if any name element contains the search term
+            return customer.name.some(nameElement => 
+              nameElement.toLowerCase().includes(searchName)
+            );
+          }
+          // Also check commercial name if available
+          if (customer.commercial_name) {
+            return customer.commercial_name.toLowerCase().includes(searchName);
+          }
+          return false;
+        });
+      }
+      
+      // Return filtered response
+      return {
+        ...response,
+        results: filteredResults,
+        pagination: response.pagination ? {
+          ...response.pagination,
+          total_results: filteredResults.length
+        } : undefined
+      };
+    }
+    
+    return response;
   }
 
   // Invoices endpoints

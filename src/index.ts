@@ -34,11 +34,11 @@ class SiigoMCPServer {
       username: process.env.SIIGO_USERNAME || '',
       accessKey: process.env.SIIGO_ACCESS_KEY || '',
       baseUrl: process.env.SIIGO_BASE_URL || 'https://api.siigo.com',
-      partnerId: process.env.SIIGO_PARTNER_ID || 'siigo-mcp-server',
+      partnerId: process.env.SIIGO_PARTNER_ID || '',
     };
 
-    if (!config.username || !config.accessKey) {
-      throw new Error('SIIGO_USERNAME and SIIGO_ACCESS_KEY environment variables are required');
+    if (!config.username || !config.accessKey || !config.partnerId) {
+      throw new Error('SIIGO_USERNAME, SIIGO_ACCESS_KEY, and SIIGO_PARTNER_ID environment variables are required');
     }
 
     this.siigoClient = new SiigoClient(config);
@@ -68,6 +68,8 @@ class SiigoMCPServer {
             return await this.handleUpdateProduct(args);
           case 'siigo_delete_product':
             return await this.handleDeleteProduct(args);
+          case 'siigo_search_products':
+            return await this.handleSearchProducts(args);
 
           // Customers
           case 'siigo_get_customers':
@@ -78,6 +80,8 @@ class SiigoMCPServer {
             return await this.handleCreateCustomer(args);
           case 'siigo_update_customer':
             return await this.handleUpdateCustomer(args);
+          case 'siigo_search_customers':
+            return await this.handleSearchCustomers(args);
 
           // Invoices
           case 'siigo_get_invoices':
@@ -269,6 +273,35 @@ class SiigoMCPServer {
           required: ['id'],
         },
       },
+      {
+        name: 'siigo_search_products',
+        description: 'Search for products by code, name, or reference with filtering capabilities',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            code: { 
+              type: 'string', 
+              description: 'Search by product code (partial match)' 
+            },
+            name: { 
+              type: 'string', 
+              description: 'Search by product name (partial match)' 
+            },
+            reference: { 
+              type: 'string', 
+              description: 'Search by product reference (partial match)' 
+            },
+            page: { 
+              type: 'number', 
+              description: 'Page number for pagination' 
+            },
+            page_size: { 
+              type: 'number', 
+              description: 'Number of items per page (max 100)' 
+            },
+          },
+        },
+      },
 
       // Customers
       {
@@ -343,6 +376,36 @@ class SiigoMCPServer {
             customer: { type: 'object', description: 'Customer data to update' },
           },
           required: ['id', 'customer'],
+        },
+      },
+      {
+        name: 'siigo_search_customers',
+        description: 'Search for customers by identification, name, or type with filtering capabilities',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            identification: { 
+              type: 'string', 
+              description: 'Search by customer identification number (partial or exact match)' 
+            },
+            name: { 
+              type: 'string', 
+              description: 'Search by customer name (partial match across all name fields)' 
+            },
+            type: { 
+              type: 'string', 
+              enum: ['Customer', 'Supplier', 'Other'],
+              description: 'Filter by customer type' 
+            },
+            page: { 
+              type: 'number', 
+              description: 'Page number for pagination' 
+            },
+            page_size: { 
+              type: 'number', 
+              description: 'Number of items per page (max 100)' 
+            },
+          },
         },
       },
 
@@ -839,6 +902,18 @@ class SiigoMCPServer {
     };
   }
 
+  private async handleSearchProducts(args: any) {
+    const result = await this.siigoClient.searchProducts(args);
+    return {
+      content: [
+        {
+          type: 'text',
+          text: JSON.stringify(result, null, 2),
+        },
+      ],
+    };
+  }
+
   private async handleGetCustomers(args: any) {
     const result = await this.siigoClient.getCustomers(args);
     return {
@@ -877,6 +952,18 @@ class SiigoMCPServer {
 
   private async handleUpdateCustomer(args: any) {
     const result = await this.siigoClient.updateCustomer(args.id, args.customer);
+    return {
+      content: [
+        {
+          type: 'text',
+          text: JSON.stringify(result, null, 2),
+        },
+      ],
+    };
+  }
+
+  private async handleSearchCustomers(args: any) {
+    const result = await this.siigoClient.searchCustomers(args);
     return {
       content: [
         {

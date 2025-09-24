@@ -2,20 +2,32 @@
 
 ## Quick Start
 
-### 1. Install
+### Option 1: NPX (Recommended - No Installation Required)
 ```bash
+# Set environment variables and run directly
+SIIGO_USERNAME=your_username SIIGO_ACCESS_KEY=your_key SIIGO_PARTNER_ID=your_app npx siigo-mcp-server
+```
+
+### Option 2: Global Installation
+```bash
+# 1. Install globally
 npm install -g siigo-mcp-server
+
+# 2. Set environment variables and run
+SIIGO_USERNAME=your_username SIIGO_ACCESS_KEY=your_key SIIGO_PARTNER_ID=your_app siigo-mcp
 ```
 
-### 2. Configure Environment
-Create a `.env` file or set environment variables:
+### Option 3: Environment File
 ```bash
-export SIIGO_USERNAME="your_username"
-export SIIGO_ACCESS_KEY="your_access_key"
-```
+# Create .env file with your credentials
+echo "SIIGO_USERNAME=your_username" > .env
+echo "SIIGO_ACCESS_KEY=your_key" >> .env
+echo "SIIGO_PARTNER_ID=your_app" >> .env
 
-### 3. Run the Server
-```bash
+# Run with npx
+npx siigo-mcp-server
+
+# Or run with global installation
 siigo-mcp
 ```
 
@@ -28,6 +40,24 @@ Add to your Claude Desktop config file:
 **macOS**: `~/Library/Application Support/Claude/claude_desktop_config.json`
 **Linux**: `~/.config/Claude/claude_desktop_config.json`
 
+#### Option A: Using NPX (Recommended)
+```json
+{
+  "mcpServers": {
+    "siigo": {
+      "command": "npx",
+      "args": ["siigo-mcp-server"],
+      "env": {
+        "SIIGO_USERNAME": "your_username",
+        "SIIGO_ACCESS_KEY": "your_access_key",
+        "SIIGO_PARTNER_ID": "your_app_name"
+      }
+    }
+  }
+}
+```
+
+#### Option B: Using Global Installation
 ```json
 {
   "mcpServers": {
@@ -35,7 +65,8 @@ Add to your Claude Desktop config file:
       "command": "siigo-mcp",
       "env": {
         "SIIGO_USERNAME": "your_username",
-        "SIIGO_ACCESS_KEY": "your_access_key"
+        "SIIGO_ACCESS_KEY": "your_access_key",
+        "SIIGO_PARTNER_ID": "your_app_name"
       }
     }
   }
@@ -43,10 +74,18 @@ Add to your Claude Desktop config file:
 ```
 
 ### Other MCP Clients
-For other MCP clients, use:
+For other MCP clients, use either:
+
+**NPX (Recommended):**
+- **Command**: `npx`
+- **Args**: `["siigo-mcp-server"]`
+- **Transport**: stdio
+- **Environment**: Set `SIIGO_USERNAME`, `SIIGO_ACCESS_KEY`, and `SIIGO_PARTNER_ID`
+
+**Global Installation:**
 - **Command**: `siigo-mcp`
 - **Transport**: stdio
-- **Environment**: Set `SIIGO_USERNAME` and `SIIGO_ACCESS_KEY`
+- **Environment**: Set `SIIGO_USERNAME`, `SIIGO_ACCESS_KEY`, and `SIIGO_PARTNER_ID`
 
 ## Available Tools
 

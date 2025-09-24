@@ -1,6 +1,6 @@
 {
   "name": "siigo-mcp-server",
-  "version": "1.0.0",
+  "version": "2.1.0",
   "description": "Model Context Protocol (MCP) server for Siigo Colombian accounting software API integration",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -19,6 +19,7 @@
     "dist/",
     "bin/",
     "README.md",
+    "CHANGELOG.md",
     ".env.example"
   ],
   "keywords": [
