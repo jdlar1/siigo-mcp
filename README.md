@@ -2,6 +2,10 @@
 
 A Model Context Protocol (MCP) server that provides integration with the Siigo API, enabling access to Colombian accounting software features including products, customers, invoices, purchases, credit notes, vouchers, payment receipts, and journals.
 
+<a href="https://glama.ai/mcp/servers/@jdlar1/siigo-mcp">
+  <img width="380" height="200" src="https://glama.ai/mcp/servers/@jdlar1/siigo-mcp/badge" alt="Siigo Server MCP server" />
+</a>
+
 ## Features
 
 This MCP server provides access to all major Siigo API endpoints:
