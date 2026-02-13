@@ -1,20 +1,10 @@
 #!/usr/bin/env node
 
-const path = require('path');
-const { spawn } = require('child_process');
-
-const serverPath = path.join(__dirname, '..', 'dist', 'index.js');
-
-const child = spawn('node', [serverPath], {
-  stdio: 'inherit',
-  env: process.env
-});
-
-child.on('error', (error) => {
+// This is a simple shim to launch the compiled MCP server.
+// It must use dynamic import since the package is ESM.
+const { join } = require('path');
+const serverPath = join(__dirname, '..', 'dist', 'index.js');
+import(serverPath).catch((error) => {
   console.error('Failed to start Siigo MCP server:', error);
   process.exit(1);
-});
-
-child.on('exit', (code) => {
-  process.exit(code);
 });

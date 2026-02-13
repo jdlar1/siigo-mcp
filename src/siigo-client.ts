@@ -1,5 +1,29 @@
 import axios, { AxiosInstance, AxiosResponse } from 'axios';
-import { SiigoConfig, SiigoToken, SiigoCustomer, SiigoProduct, SiigoInvoice, SiigoApiResponse } from './types.js';
+import {
+  SiigoConfig,
+  SiigoToken,
+  SiigoCustomer,
+  SiigoProduct,
+  SiigoInvoice,
+  SiigoApiResponse,
+  SiigoQuotation,
+  SiigoCreditNote,
+  SiigoVoucher,
+  SiigoPaymentReceipt,
+  SiigoPurchase,
+  SiigoJournal,
+  SiigoAccountGroupIn,
+  SiigoAccountGroup,
+  SiigoBatchInvoiceRequest,
+  SiigoBatchInvoiceResponse,
+  SiigoWebhook,
+  SiigoTrialBalanceParams,
+  SiigoTrialBalanceByThirdParams,
+  SiigoPdfResponse,
+  SiigoXmlResponse,
+  SiigoStampErrorsResponse,
+  SiigoFixedAsset,
+} from './types.js';
 
 export class SiigoClient {
   private config: SiigoConfig;
@@ -15,6 +39,7 @@ export class SiigoClient {
         'Content-Type': 'application/json',
         'Partner-Id': config.partnerId,
       },
+      timeout: 120000, // 120s as recommended by Siigo API docs
     });
   }
 
@@ -31,14 +56,20 @@ export class SiigoClient {
 
       this.token = response.data.access_token;
       this.tokenExpiry = new Date(Date.now() + (response.data.expires_in * 1000));
-      
+
       this.httpClient.defaults.headers.common['Authorization'] = `Bearer ${this.token}`;
     } catch (error) {
       throw new Error(`Authentication failed: ${error}`);
     }
   }
 
-  private async makeRequest<T>(method: string, endpoint: string, data?: any, params?: any): Promise<SiigoApiResponse<T>> {
+  private async makeRequest<T>(
+    method: string,
+    endpoint: string,
+    data?: unknown,
+    params?: Record<string, unknown>,
+    headers?: Record<string, string>,
+  ): Promise<SiigoApiResponse<T>> {
     await this.authenticate();
 
     try {
@@ -47,27 +78,29 @@ export class SiigoClient {
         url: endpoint,
         data,
         params,
+        headers,
       });
 
       return response.data;
-    } catch (error: any) {
-      if (error.response?.data) {
+    } catch (error: unknown) {
+      if (axios.isAxiosError(error) && error.response?.data) {
         return error.response.data;
       }
-      throw new Error(`API request failed: ${error.message}`);
+      throw new Error(`API request failed: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
 
-  // Products endpoints
+  // ─── Products ──────────────────────────────────────────────────────────
+
   async getProducts(params?: { page?: number; page_size?: number }): Promise<SiigoApiResponse<SiigoProduct>> {
-    return this.makeRequest<SiigoProduct>('GET', '/v1/products', undefined, params);
+    return this.makeRequest<SiigoProduct>('GET', '/v1/products', undefined, params as Record<string, unknown>);
   }
 
   async getProduct(id: string): Promise<SiigoApiResponse<SiigoProduct>> {
     return this.makeRequest<SiigoProduct>('GET', `/v1/products/${id}`);
   }
 
-  async createProduct(product: SiigoProduct): Promise<SiigoApiResponse<SiigoProduct>> {
+  async createProduct(product: Partial<SiigoProduct>): Promise<SiigoApiResponse<SiigoProduct>> {
     return this.makeRequest<SiigoProduct>('POST', '/v1/products', product);
   }
 
@@ -75,11 +108,10 @@ export class SiigoClient {
     return this.makeRequest<SiigoProduct>('PUT', `/v1/products/${id}`, product);
   }
 
-  async deleteProduct(id: string): Promise<SiigoApiResponse<any>> {
-    return this.makeRequest<any>('DELETE', `/v1/products/${id}`);
+  async deleteProduct(id: string): Promise<SiigoApiResponse<unknown>> {
+    return this.makeRequest<unknown>('DELETE', `/v1/products/${id}`);
   }
 
-  // Enhanced product search functionality
   async searchProducts(searchParams: {
     code?: string;
     name?: string;
@@ -87,72 +119,78 @@ export class SiigoClient {
     page?: number;
     page_size?: number;
   }): Promise<SiigoApiResponse<SiigoProduct>> {
-    // Build query parameters for search
-    const params: any = {};
-    
+    const params: Record<string, unknown> = {};
+
     if (searchParams.page) params.page = searchParams.page;
     if (searchParams.page_size) params.page_size = searchParams.page_size;
-    
-    // Fetch products and filter client-side
+
     const response = await this.makeRequest<SiigoProduct>('GET', '/v1/products', undefined, params);
-    
-    // If no text-based filters, return the API response as-is
+
     if (!searchParams.code && !searchParams.name && !searchParams.reference) {
       return response;
     }
-    
-    // Filter results based on search criteria
+
     if (response.results) {
       let filteredResults = response.results;
-      
-      // Filter by code (partial match)
+
       if (searchParams.code) {
         const searchCode = searchParams.code.toLowerCase();
-        filteredResults = filteredResults.filter(product => 
-          product.code?.toLowerCase().includes(searchCode)
+        filteredResults = filteredResults.filter(product =>
+          product.code?.toLowerCase().includes(searchCode),
         );
       }
-      
-      // Filter by name (partial match)
+
       if (searchParams.name) {
         const searchName = searchParams.name.toLowerCase();
-        filteredResults = filteredResults.filter(product => 
-          product.name?.toLowerCase().includes(searchName)
+        filteredResults = filteredResults.filter(product =>
+          product.name?.toLowerCase().includes(searchName),
         );
       }
-      
-      // Filter by reference (partial match)
+
       if (searchParams.reference) {
         const searchRef = searchParams.reference.toLowerCase();
-        filteredResults = filteredResults.filter(product => 
-          product.reference?.toLowerCase().includes(searchRef)
+        filteredResults = filteredResults.filter(product =>
+          product.reference?.toLowerCase().includes(searchRef),
         );
       }
-      
-      // Return filtered response
+
       return {
         ...response,
         results: filteredResults,
-        pagination: response.pagination ? {
-          ...response.pagination,
-          total_results: filteredResults.length
-        } : undefined
+        pagination: response.pagination
+          ? { ...response.pagination, total_results: filteredResults.length }
+          : undefined,
       };
     }
-    
+
     return response;
   }
 
-  // Customers endpoints
+  // ─── Account Groups (Inventory Categories) ─────────────────────────────
+
+  async getAccountGroups(): Promise<SiigoApiResponse<SiigoAccountGroup>> {
+    return this.makeRequest<SiigoAccountGroup>('GET', '/v1/account-groups');
+  }
+
+  async createAccountGroup(data: SiigoAccountGroupIn): Promise<SiigoApiResponse<SiigoAccountGroup>> {
+    return this.makeRequest<SiigoAccountGroup>('POST', '/v1/account-groups', data);
+  }
+
+  async updateAccountGroup(id: number, data: SiigoAccountGroupIn): Promise<SiigoApiResponse<SiigoAccountGroup>> {
+    return this.makeRequest<SiigoAccountGroup>('PUT', `/v1/account-groups/${id}`, data);
+  }
+
+  // ─── Customers ─────────────────────────────────────────────────────────
+
   async getCustomers(params?: { page?: number; page_size?: number; type?: string }): Promise<SiigoApiResponse<SiigoCustomer>> {
-    return this.makeRequest<SiigoCustomer>('GET', '/v1/customers', undefined, params);
+    return this.makeRequest<SiigoCustomer>('GET', '/v1/customers', undefined, params as Record<string, unknown>);
   }
 
   async getCustomer(id: string): Promise<SiigoApiResponse<SiigoCustomer>> {
     return this.makeRequest<SiigoCustomer>('GET', `/v1/customers/${id}`);
   }
 
-  async createCustomer(customer: SiigoCustomer): Promise<SiigoApiResponse<SiigoCustomer>> {
+  async createCustomer(customer: Partial<SiigoCustomer>): Promise<SiigoApiResponse<SiigoCustomer>> {
     return this.makeRequest<SiigoCustomer>('POST', '/v1/customers', customer);
   }
 
@@ -160,7 +198,6 @@ export class SiigoClient {
     return this.makeRequest<SiigoCustomer>('PUT', `/v1/customers/${id}`, customer);
   }
 
-  // Enhanced customer search functionality
   async searchCustomers(searchParams: {
     identification?: string;
     name?: string;
@@ -168,76 +205,71 @@ export class SiigoClient {
     page?: number;
     page_size?: number;
   }): Promise<SiigoApiResponse<SiigoCustomer>> {
-    // Build query parameters for search
-    const params: any = {};
-    
+    const params: Record<string, unknown> = {};
+
     if (searchParams.page) params.page = searchParams.page;
     if (searchParams.page_size) params.page_size = searchParams.page_size;
     if (searchParams.type) params.type = searchParams.type;
-    
-    // For name and identification, we'll need to fetch and filter
-    // since Siigo API doesn't support direct text search parameters
+
     const response = await this.makeRequest<SiigoCustomer>('GET', '/v1/customers', undefined, params);
-    
-    // If no text-based filters, return the API response as-is
+
     if (!searchParams.identification && !searchParams.name) {
       return response;
     }
-    
-    // Filter results based on search criteria
+
     if (response.results) {
       let filteredResults = response.results;
-      
-      // Filter by identification (exact or partial match)
+
       if (searchParams.identification) {
         const searchId = searchParams.identification.toLowerCase();
-        filteredResults = filteredResults.filter(customer => 
-          customer.identification?.toLowerCase().includes(searchId)
+        filteredResults = filteredResults.filter(customer =>
+          customer.identification?.toLowerCase().includes(searchId),
         );
       }
-      
-      // Filter by name (partial match in any name field)
+
       if (searchParams.name) {
         const searchName = searchParams.name.toLowerCase();
         filteredResults = filteredResults.filter(customer => {
           if (customer.name) {
-            // Check if any name element contains the search term
-            return customer.name.some(nameElement => 
-              nameElement.toLowerCase().includes(searchName)
+            return customer.name.some(nameElement =>
+              nameElement.toLowerCase().includes(searchName),
             );
           }
-          // Also check commercial name if available
           if (customer.commercial_name) {
             return customer.commercial_name.toLowerCase().includes(searchName);
           }
           return false;
         });
       }
-      
-      // Return filtered response
+
       return {
         ...response,
         results: filteredResults,
-        pagination: response.pagination ? {
-          ...response.pagination,
-          total_results: filteredResults.length
-        } : undefined
+        pagination: response.pagination
+          ? { ...response.pagination, total_results: filteredResults.length }
+          : undefined,
       };
     }
-    
+
     return response;
   }
 
-  // Invoices endpoints
-  async getInvoices(params?: { page?: number; page_size?: number; created_start?: string; created_end?: string }): Promise<SiigoApiResponse<SiigoInvoice>> {
-    return this.makeRequest<SiigoInvoice>('GET', '/v1/invoices', undefined, params);
+  // ─── Invoices ──────────────────────────────────────────────────────────
+
+  async getInvoices(params?: {
+    page?: number;
+    page_size?: number;
+    created_start?: string;
+    created_end?: string;
+  }): Promise<SiigoApiResponse<SiigoInvoice>> {
+    return this.makeRequest<SiigoInvoice>('GET', '/v1/invoices', undefined, params as Record<string, unknown>);
   }
 
   async getInvoice(id: string): Promise<SiigoApiResponse<SiigoInvoice>> {
     return this.makeRequest<SiigoInvoice>('GET', `/v1/invoices/${id}`);
   }
 
-  async createInvoice(invoice: SiigoInvoice): Promise<SiigoApiResponse<SiigoInvoice>> {
+  async createInvoice(invoice: Partial<SiigoInvoice>): Promise<SiigoApiResponse<SiigoInvoice>> {
     return this.makeRequest<SiigoInvoice>('POST', '/v1/invoices', invoice);
   }
 
@@ -245,172 +277,226 @@ export class SiigoClient {
     return this.makeRequest<SiigoInvoice>('PUT', `/v1/invoices/${id}`, invoice);
   }
 
-  async deleteInvoice(id: string): Promise<SiigoApiResponse<any>> {
-    return this.makeRequest<any>('DELETE', `/v1/invoices/${id}`);
+  async deleteInvoice(id: string): Promise<SiigoApiResponse<unknown>> {
+    return this.makeRequest<unknown>('DELETE', `/v1/invoices/${id}`);
   }
 
-  async getInvoicePdf(id: string): Promise<SiigoApiResponse<{ base64: string }>> {
-    return this.makeRequest<{ base64: string }>('GET', `/v1/invoices/${id}/pdf`);
+  async annulInvoice(id: string): Promise<SiigoApiResponse<unknown>> {
+    return this.makeRequest<unknown>('POST', `/v1/invoices/${id}/annul`);
   }
 
-  async sendInvoiceByEmail(id: string, emailData: { mail_to: string; copy_to?: string }): Promise<SiigoApiResponse<any>> {
-    return this.makeRequest<any>('POST', `/v1/invoices/${id}/mail`, emailData);
+  async getInvoicePdf(id: string): Promise<SiigoApiResponse<SiigoPdfResponse>> {
+    return this.makeRequest<SiigoPdfResponse>('GET', `/v1/invoices/${id}/pdf`);
   }
 
-  // Credit Notes endpoints
-  async getCreditNotes(params?: { page?: number; page_size?: number }): Promise<SiigoApiResponse<any>> {
-    return this.makeRequest<any>('GET', '/v1/credit-notes', undefined, params);
+  async getInvoiceXml(id: string): Promise<SiigoApiResponse<SiigoXmlResponse>> {
+    return this.makeRequest<SiigoXmlResponse>('GET', `/v1/invoices/${id}/xml`);
   }
 
-  async getCreditNote(id: string): Promise<SiigoApiResponse<any>> {
-    return this.makeRequest<any>('GET', `/v1/credit-notes/${id}`);
+  async getInvoiceStampErrors(id: string): Promise<SiigoApiResponse<SiigoStampErrorsResponse>> {
+    return this.makeRequest<SiigoStampErrorsResponse>('GET', `/v1/invoices/${id}/stamp/errors`);
   }
 
-  async createCreditNote(creditNote: any): Promise<SiigoApiResponse<any>> {
-    return this.makeRequest<any>('POST', '/v1/credit-notes', creditNote);
+  async sendInvoiceByEmail(id: string, emailData: { mail_to: string; copy_to?: string }): Promise<SiigoApiResponse<unknown>> {
+    return this.makeRequest<unknown>('POST', `/v1/invoices/${id}/mail`, emailData);
   }
 
-  // Vouchers (Recibos de caja) endpoints
-  async getVouchers(params?: { page?: number; page_size?: number }): Promise<SiigoApiResponse<any>> {
-    return this.makeRequest<any>('GET', '/v1/vouchers', undefined, params);
+  async createInvoiceBatch(batch: SiigoBatchInvoiceRequest): Promise<SiigoApiResponse<SiigoBatchInvoiceResponse>> {
+    return this.makeRequest<SiigoBatchInvoiceResponse>('POST', '/v1/invoices/batch', batch);
   }
 
-  async getVoucher(id: string): Promise<SiigoApiResponse<any>> {
-    return this.makeRequest<any>('GET', `/v1/vouchers/${id}`);
+  // ─── Quotations ────────────────────────────────────────────────────────
+
+  async getQuotations(params?: {
+    page?: number;
+    page_size?: number;
+    created_start?: string;
+    created_end?: string;
+  }): Promise<SiigoApiResponse<SiigoQuotation>> {
+    return this.makeRequest<SiigoQuotation>('GET', '/v1/quotations', undefined, params as Record<string, unknown>);
   }
 
-  async createVoucher(voucher: any): Promise<SiigoApiResponse<any>> {
-    return this.makeRequest<any>('POST', '/v1/vouchers', voucher);
+  async getQuotation(id: string): Promise<SiigoApiResponse<SiigoQuotation>> {
+    return this.makeRequest<SiigoQuotation>('GET', `/v1/quotations/${id}`);
   }
 
-  // Purchases endpoints
-  async getPurchases(params?: { page?: number; page_size?: number }): Promise<SiigoApiResponse<any>> {
-    return this.makeRequest<any>('GET', '/v1/purchases', undefined, params);
+  async createQuotation(quotation: Partial<SiigoQuotation>): Promise<SiigoApiResponse<SiigoQuotation>> {
+    return this.makeRequest<SiigoQuotation>('POST', '/v1/quotations', quotation);
   }
 
-  async getPurchase(id: string): Promise<SiigoApiResponse<any>> {
-    return this.makeRequest<any>('GET', `/v1/purchases/${id}`);
+  async updateQuotation(id: string, quotation: Partial<SiigoQuotation>): Promise<SiigoApiResponse<SiigoQuotation>> {
+    return this.makeRequest<SiigoQuotation>('PUT', `/v1/quotations/${id}`, quotation);
   }
 
-  async createPurchase(purchase: any): Promise<SiigoApiResponse<any>> {
-    return this.makeRequest<any>('POST', '/v1/purchases', purchase);
+  async deleteQuotation(id: string): Promise<SiigoApiResponse<unknown>> {
+    return this.makeRequest<unknown>('DELETE', `/v1/quotations/${id}`);
   }
 
-  async updatePurchase(id: string, purchase: any): Promise<SiigoApiResponse<any>> {
-    return this.makeRequest<any>('PUT', `/v1/purchases/${id}`, purchase);
+  // ─── Credit Notes ──────────────────────────────────────────────────────
+
+  async getCreditNotes(params?: { page?: number; page_size?: number }): Promise<SiigoApiResponse<SiigoCreditNote>> {
+    return this.makeRequest<SiigoCreditNote>('GET', '/v1/credit-notes', undefined, params as Record<string, unknown>);
   }
 
-  async deletePurchase(id: string): Promise<SiigoApiResponse<any>> {
-    return this.makeRequest<any>('DELETE', `/v1/purchases/${id}`);
+  async getCreditNote(id: string): Promise<SiigoApiResponse<SiigoCreditNote>> {
+    return this.makeRequest<SiigoCreditNote>('GET', `/v1/credit-notes/${id}`);
   }
 
-  // Payment Receipts endpoints
-  async getPaymentReceipts(params?: { page?: number; page_size?: number }): Promise<SiigoApiResponse<any>> {
-    return this.makeRequest<any>('GET', '/v1/payment-receipts', undefined, params);
+  async createCreditNote(creditNote: Partial<SiigoCreditNote>): Promise<SiigoApiResponse<SiigoCreditNote>> {
+    return this.makeRequest<SiigoCreditNote>('POST', '/v1/credit-notes', creditNote);
   }
 
-  async getPaymentReceipt(id: string): Promise<SiigoApiResponse<any>> {
-    return this.makeRequest<any>('GET', `/v1/payment-receipts/${id}`);
+  async getCreditNotePdf(id: string): Promise<SiigoApiResponse<SiigoPdfResponse>> {
+    return this.makeRequest<SiigoPdfResponse>('GET', `/v1/credit-notes/${id}/pdf`);
   }
 
-  async createPaymentReceipt(paymentReceipt: any): Promise<SiigoApiResponse<any>> {
-    return this.makeRequest<any>('POST', '/v1/payment-receipts', paymentReceipt);
+  // ─── Vouchers (Recibos de Caja) ────────────────────────────────────────
+
+  async getVouchers(params?: { page?: number; page_size?: number }): Promise<SiigoApiResponse<SiigoVoucher>> {
+    return this.makeRequest<SiigoVoucher>('GET', '/v1/vouchers', undefined, params as Record<string, unknown>);
   }
 
-  async updatePaymentReceipt(id: string, paymentReceipt: any): Promise<SiigoApiResponse<any>> {
-    return this.makeRequest<any>('PUT', `/v1/payment-receipts/${id}`, paymentReceipt);
+  async getVoucher(id: string): Promise<SiigoApiResponse<SiigoVoucher>> {
+    return this.makeRequest<SiigoVoucher>('GET', `/v1/vouchers/${id}`);
   }
 
-  async deletePaymentReceipt(id: string): Promise<SiigoApiResponse<any>> {
-    return this.makeRequest<any>('DELETE', `/v1/payment-receipts/${id}`);
+  async createVoucher(voucher: Partial<SiigoVoucher>): Promise<SiigoApiResponse<SiigoVoucher>> {
+    return this.makeRequest<SiigoVoucher>('POST', '/v1/vouchers', voucher);
   }
 
-  // Journals endpoints
-  async getJournals(params?: { page?: number; page_size?: number }): Promise<SiigoApiResponse<any>> {
-    return this.makeRequest<any>('GET', '/v1/journals', undefined, params);
+  // ─── Purchases (Facturas de Compra) ────────────────────────────────────
+
+  async getPurchases(params?: { page?: number; page_size?: number }): Promise<SiigoApiResponse<SiigoPurchase>> {
+    return this.makeRequest<SiigoPurchase>('GET', '/v1/purchases', undefined, params as Record<string, unknown>);
   }
 
-  async getJournal(id: string): Promise<SiigoApiResponse<any>> {
-    return this.makeRequest<any>('GET', `/v1/journals/${id}`);
+  async getPurchase(id: string): Promise<SiigoApiResponse<SiigoPurchase>> {
+    return this.makeRequest<SiigoPurchase>('GET', `/v1/purchases/${id}`);
   }
 
-  async createJournal(journal: any): Promise<SiigoApiResponse<any>> {
-    return this.makeRequest<any>('POST', '/v1/journals', journal);
+  async createPurchase(purchase: Partial<SiigoPurchase>): Promise<SiigoApiResponse<SiigoPurchase>> {
+    return this.makeRequest<SiigoPurchase>('POST', '/v1/purchases', purchase);
   }
 
-  // Catalogs endpoints
-  async getDocumentTypes(type?: string): Promise<SiigoApiResponse<any>> {
-    return this.makeRequest<any>('GET', '/v1/document-types', undefined, type ? { type } : undefined);
+  async updatePurchase(id: string, purchase: Partial<SiigoPurchase>): Promise<SiigoApiResponse<SiigoPurchase>> {
+    return this.makeRequest<SiigoPurchase>('PUT', `/v1/purchases/${id}`, purchase);
   }
 
-  async getTaxes(): Promise<SiigoApiResponse<any>> {
-    return this.makeRequest<any>('GET', '/v1/taxes');
+  async deletePurchase(id: string): Promise<SiigoApiResponse<unknown>> {
+    return this.makeRequest<unknown>('DELETE', `/v1/purchases/${id}`);
   }
 
-  async getPaymentTypes(documentType?: string): Promise<SiigoApiResponse<any>> {
-    return this.makeRequest<any>('GET', '/v1/payment-types', undefined, documentType ? { document_type: documentType } : undefined);
+  // ─── Payment Receipts (Recibos de Pago / Egreso) ──────────────────────
+
+  async getPaymentReceipts(params?: { page?: number; page_size?: number }): Promise<SiigoApiResponse<SiigoPaymentReceipt>> {
+    return this.makeRequest<SiigoPaymentReceipt>('GET', '/v1/payment-receipts', undefined, params as Record<string, unknown>);
   }
 
-  async getCostCenters(): Promise<SiigoApiResponse<any>> {
-    return this.makeRequest<any>('GET', '/v1/cost-centers');
+  async getPaymentReceipt(id: string): Promise<SiigoApiResponse<SiigoPaymentReceipt>> {
+    return this.makeRequest<SiigoPaymentReceipt>('GET', `/v1/payment-receipts/${id}`);
   }
 
-  async getUsers(): Promise<SiigoApiResponse<any>> {
-    return this.makeRequest<any>('GET', '/v1/users');
+  async createPaymentReceipt(paymentReceipt: Partial<SiigoPaymentReceipt>): Promise<SiigoApiResponse<SiigoPaymentReceipt>> {
+    return this.makeRequest<SiigoPaymentReceipt>('POST', '/v1/payment-receipts', paymentReceipt);
   }
 
-  async getWarehouses(): Promise<SiigoApiResponse<any>> {
-    return this.makeRequest<any>('GET', '/v1/warehouses');
+  async updatePaymentReceipt(id: string, paymentReceipt: Partial<SiigoPaymentReceipt>): Promise<SiigoApiResponse<SiigoPaymentReceipt>> {
+    return this.makeRequest<SiigoPaymentReceipt>('PUT', `/v1/payment-receipts/${id}`, paymentReceipt);
   }
 
-  async getPriceLists(): Promise<SiigoApiResponse<any>> {
-    return this.makeRequest<any>('GET', '/v1/price-lists');
+  async deletePaymentReceipt(id: string): Promise<SiigoApiResponse<unknown>> {
+    return this.makeRequest<unknown>('DELETE', `/v1/payment-receipts/${id}`);
   }
 
-  async getAccountGroups(): Promise<SiigoApiResponse<any>> {
-    return this.makeRequest<any>('GET', '/v1/account-groups');
+  // ─── Journals (Comprobantes Contables) ─────────────────────────────────
+
+  async getJournals(params?: { page?: number; page_size?: number }): Promise<SiigoApiResponse<SiigoJournal>> {
+    return this.makeRequest<SiigoJournal>('GET', '/v1/journals', undefined, params as Record<string, unknown>);
   }
 
-  async getCities(): Promise<SiigoApiResponse<any>> {
-    return this.makeRequest<any>('GET', '/v1/cities');
+  async getJournal(id: string): Promise<SiigoApiResponse<SiigoJournal>> {
+    return this.makeRequest<SiigoJournal>('GET', `/v1/journals/${id}`);
   }
 
-  async getIdTypes(): Promise<SiigoApiResponse<any>> {
-    return this.makeRequest<any>('GET', '/v1/id-types');
+  async createJournal(journal: Partial<SiigoJournal>): Promise<SiigoApiResponse<SiigoJournal>> {
+    return this.makeRequest<SiigoJournal>('POST', '/v1/journals', journal);
   }
 
-  async getFiscalResponsibilities(): Promise<SiigoApiResponse<any>> {
-    return this.makeRequest<any>('GET', '/v1/fiscal-responsibilities');
+  // ─── Webhooks ──────────────────────────────────────────────────────────
+
+  async getWebhooks(): Promise<SiigoApiResponse<SiigoWebhook>> {
+    return this.makeRequest<SiigoWebhook>('GET', '/v1/webhooks');
   }
 
-  // Reports endpoints
-  async getTrialBalance(params: {
-    account_start?: string;
-    account_end?: string;
-    year: number;
-    month_start: number;
-    month_end: number;
-    includes_tax_difference: boolean;
-  }): Promise<SiigoApiResponse<any>> {
-    return this.makeRequest<any>('GET', '/v1/trial-balance', undefined, params);
+  async createWebhook(webhook: Partial<SiigoWebhook>): Promise<SiigoApiResponse<SiigoWebhook>> {
+    return this.makeRequest<SiigoWebhook>('POST', '/v1/webhooks', webhook);
   }
 
-  async getTrialBalanceByThird(params: {
-    account_start?: string;
-    account_end?: string;
-    year: number;
-    month_start: number;
-    month_end: number;
-    includes_tax_difference: boolean;
-    customer?: {
-      identification: string;
-      branch_office?: number;
-    };
-  }): Promise<SiigoApiResponse<any>> {
-    return this.makeRequest<any>('GET', '/v1/trial-balance-by-third', undefined, params);
+  async updateWebhook(webhook: Partial<SiigoWebhook>): Promise<SiigoApiResponse<SiigoWebhook>> {
+    return this.makeRequest<SiigoWebhook>('PUT', '/v1/webhooks', webhook);
   }
 
-  async getAccountsPayable(params?: { page?: number; page_size?: number }): Promise<SiigoApiResponse<any>> {
-    return this.makeRequest<any>('GET', '/v1/accounts-payable', undefined, params);
+  async deleteWebhook(id: string): Promise<SiigoApiResponse<unknown>> {
+    return this.makeRequest<unknown>('DELETE', `/v1/webhooks/${id}`);
+  }
+
+  // ─── Catalogs ──────────────────────────────────────────────────────────
+
+  async getDocumentTypes(type?: string): Promise<SiigoApiResponse<unknown>> {
+    return this.makeRequest<unknown>('GET', '/v1/document-types', undefined, type ? { type } : undefined);
+  }
+
+  async getTaxes(): Promise<SiigoApiResponse<unknown>> {
+    return this.makeRequest<unknown>('GET', '/v1/taxes');
+  }
+
+  async getPaymentTypes(documentType?: string): Promise<SiigoApiResponse<unknown>> {
+    return this.makeRequest<unknown>('GET', '/v1/payment-types', undefined, documentType ? { document_type: documentType } : undefined);
+  }
+
+  async getCostCenters(): Promise<SiigoApiResponse<unknown>> {
+    return this.makeRequest<unknown>('GET', '/v1/cost-centers');
+  }
+
+  async getUsers(): Promise<SiigoApiResponse<unknown>> {
+    return this.makeRequest<unknown>('GET', '/v1/users');
+  }
+
+  async getWarehouses(): Promise<SiigoApiResponse<unknown>> {
+    return this.makeRequest<unknown>('GET', '/v1/warehouses');
+  }
+
+  async getPriceLists(): Promise<SiigoApiResponse<unknown>> {
+    return this.makeRequest<unknown>('GET', '/v1/price-lists');
+  }
+
+  async getCities(): Promise<SiigoApiResponse<unknown>> {
+    return this.makeRequest<unknown>('GET', '/v1/cities');
+  }
+
+  async getIdTypes(): Promise<SiigoApiResponse<unknown>> {
+    return this.makeRequest<unknown>('GET', '/v1/id-types');
+  }
+
+  async getFiscalResponsibilities(): Promise<SiigoApiResponse<unknown>> {
+    return this.makeRequest<unknown>('GET', '/v1/fiscal-responsibilities');
+  }
+
+  async getFixedAssets(): Promise<SiigoApiResponse<SiigoFixedAsset>> {
+    return this.makeRequest<SiigoFixedAsset>('GET', '/v1/fixed-assets');
+  }
+
+  // ─── Reports ───────────────────────────────────────────────────────────
+
+  async getTrialBalance(params: SiigoTrialBalanceParams): Promise<SiigoApiResponse<unknown>> {
+    return this.makeRequest<unknown>('POST', '/v1/test-balance-report', params);
+  }
+
+  async getTrialBalanceByThird(params: SiigoTrialBalanceByThirdParams): Promise<SiigoApiResponse<unknown>> {
+    return this.makeRequest<unknown>('POST', '/v1/test-balance-report-by-thirdparty', params);
+  }
+
+  async getAccountsPayable(params?: { page?: number; page_size?: number }): Promise<SiigoApiResponse<unknown>> {
+    return this.makeRequest<unknown>('GET', '/v1/accounts-payable', undefined, params as Record<string, unknown>);
   }
 }

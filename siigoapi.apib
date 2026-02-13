@@ -10,6 +10,7 @@ Tendrás acceso a los siguientes recursos:
 |---------------------------|------------------------|-------------------------------------------
 | Productos o servicios     | /products              | Crear, consultar, actualizar y borrar productos.|
 | Clientes                  | /customers             | Crear, consultar y actualizar clientes / terceros.|
+| Cotizaciones              | /quotations            | Crear, consultar, actualizar y borrar cotizaciones. |
 | Facturas de venta         | /invoices              | Crear, editar, enviar por mail, anular, borrar o consultar una o todas las facturas de venta y consultar el PDF de una factura|
 | Facturas de Compra        | /purchases             | Crear, editar, eliminar y consultar una o todas las facturas de compra |
 | Notas crédito             | /credit-notes          | Crear, consultar una o todas las notas crédito y consultar el PDF de una nota crédito|
@@ -20,6 +21,22 @@ Tendrás acceso a los siguientes recursos:
 
 
 # Novedades
+
+## Nuevo documento: Cotización
+
+Ahora podrás crear y editar, consultar o borrar cotizaciones en Siigo API.
+
+Encuentra mayor información en nuestra sección <a href="https://siigoapi.docs.apiary.io/#reference/cotizaciones">**Cotizaciones**</a>.
+
+## Creación de Categorías de Inventarios y Productos de tipo "Combo"
+
+Ahora podrás crear y editar categorías de inventarios en Siigo API.
+
+Encuentra mayor información en nuestra sección <a href="https://siigoapi.docs.apiary.io/#reference/categorias-de-inventario">**Categorías de inventario**</a>.
+
+De igual manera, si eres usuario del plan Siigo Nube Premium podrás crear y editar productos de tipo "Combo" en Siigo API.
+
+Encuentra mayor información en nuestra sección <a href="https://siigoapi.docs.apiary.io/#reference/productos">**Productos**</a>.
 
 ## Cambios en la creación de Facturas de Venta y Notas crédito del Sector de Salud
 
@@ -39,22 +56,6 @@ Encuentra mayor información en nuestra sección <a href="https://siigoapi.docs.
 
 Ahora podrás crear, editar, consultar y eliminar recibos de pago/egreso. 
 Encuentra mayor información en nuestra sección <a href="https://siigoapi.docs.apiary.io/#reference/recibos-de-pago-o-egreso/crear-recibo-de-pago-o-egreso/crear-recibo-de-pago-o-egreso">**Crear Recibo de pago o egreso**</a>.
-
-## Enviar notas crédito electrónicas o vía mail
-
-Ahora podrás crear notas crédito y realizar el envio electrónico o via mail desde la petición POST. 
-Encuentra mayor información sobre los objetos "stamp" y "mail" en nuestra sección <a href="https://siigoapi.docs.apiary.io/#reference/notas-credito/crear-nota-credito/crear-nota-credito">**Crear Nota Crédito**</a>.
-
-## Nuevas funcionalidades para suscripciones de webhooks
-
-Ahora podrás consultar, editar y eliminar las suscripciones de webhooks en Siigo API. 
-Toda la información la encuentras en  de nuestra sección <a href="https://siigoapi.docs.apiary.io/#reference/webhooks">**Webhooks**</a>.
-
-## Facturas de compra o gasto
-
-Ahora podrás crear, editar, eliminar y consultar facturas de compra desde Siigo API. 
-Toda la información la encuentras en  de nuestra sección <a href="https://siigoapi.docs.apiary.io/#reference/factura-de-compra-o-gasto">**Factura de compra**</a>.
-
 
 
 
@@ -693,6 +694,20 @@ Puedes enviar a la DIAN y por mail tus facturas de venta desde su creación en S
 + self_withholding_limit: 0 (number)
 + `electronic_type` (ElectronicType) - Indica el tipo de factura.
 
+## DocumentTypeC (object)
++ id: 24446 (number) - Identificador único del comprobante.
++ code: 1 (string) - Código del comprobante.
++ name: Cotización (string) - Nombre o título del comprobante.
++ description: Cotización (string) - Descripción del comprobante.
++ type: C (string) - Tipo de comprobante.
++ active: true (boolean) -  Estado del comprobante.
++ cost_center: false (boolean) - Maneja centro de costos.
++ cost_center_mandatory: false (boolean) - El centro de costos es obligatorio.
++ automatic_number: true (boolean) - Maneja numeración automática.
++ consecutive: 3 (number) - Consecutivo.
++ `discount_type` (DiscountType) - Maneja descuento por Porcentaje o Valor.
++ decimals: true (boolean) - Maneja decimales.
+
 ## DocumentTypeFV (object)
 + id: 24446 (number) - Identificador único del comprobante.
 + code: 1 (string) - Código del comprobante.
@@ -805,6 +820,10 @@ Puedes enviar a la DIAN y por mail tus facturas de venta desde su creación en S
 ## Discount (object)
 + percentage: 13 (number) - Porcentaje de descuento
 + value: 130 (number) - Valor de descuento
+
+## AccounGroupIn (object)
++ code: ``Abc123`` (string, required) - Código único de la categoría de inventarios.
++ name: Categoría de productos 1 (string, required) - Nombre de la categoría de inventarios.
 
 ## ProductIn (object)
 + code: ``Item-1`` (string, required) - Código único del producto.
@@ -1182,6 +1201,9 @@ Puedes enviar a la DIAN y por mail tus facturas de venta desde su creación en S
 + description: Camiseta de algodón (string) - Nombre o descripción del producto/servicio.
 + quantity: 1 (number,required) - Cantidad.
 + price: 1069.77 (number,required) - Precio del producto / Valor unitario.
++ taxes (array[TaxIn]) - Impuestos que se desean asociar al producto o servicio.
++ discount: ``0.0`` (number) - Porcentaje o Valor de descuento. Según configuración del documento.
+
 
 ## ItemOut (object)
 + id: ``63f918c2-ca65-4edc-a7db-66bcdd5159ps`` (string) - Identificador del producto/servicio.
@@ -1249,13 +1271,28 @@ Puedes enviar a la DIAN y por mail tus facturas de venta desde su creación en S
         - href: https://api.siigo.com/v1/invoices?page=5&page_size=25
     - *next*
         - href: https://api.siigo.com/v1/invoices?page=6&page_size=25
+    
 
+# QuotationsOutList (object)
++ `pagination` (Pagination)
++ results (array[QuotationOut])
++ _links
+    - *previous*
+        - href: https://api.siigo.com/v1/quotations?page=4&page_size=25
+    - *self*
+        - href: https://api.siigo.com/v1/quotations?page=5&page_size=25
+    - *next*
+        - href: https://api.siigo.com/v1/quotations?page=6&page_size=25
+        
 
 # DocumentCC (object)
 + id: 27441 (number,required) - Identificador del comprobante *https://api.siigo.com/v1/document-types?type=CC*
 
 # DocumentFV (object)
 + id: 24446 (number,required) - Identificador del comprobante *https://api.siigo.com/v1/document-types?type=FV*
+
+# DocumentC (object)
++ id: 24446 (number,required) - Identificador del comprobante *https://api.siigo.com/v1/document-types?type=C*
 
 # DocumentFC (object)
 + id: 24446 (number,required) - Identificador del comprobante *https://api.siigo.com/v1/document-types?type=FC*
@@ -1365,6 +1402,30 @@ Puedes enviar a la DIAN y por mail tus facturas de venta desde su creación en S
 + payments (array[PaymentIn],required) - Formas de pago asociadas a la factura.
 + globaldiscounts (array[GlobalDiscountsIn]) - Descuentos globales de la factura.
 + additional_fields (AdditionalFieldsInvoices) - Campos adicionales como: Orden de compra y Orden de entrega.
+
+## QuotationIn (object)
++ document (DocumentC,required) - Tipo de Comprobante (Para verificar la configuración ir a Siigo Nube en el menú Configuración > Ventas > Documentos > Cotizaciones)
++ date: ``2025-09-15`` (string,required) - Fecha de la factura, formato yyyy-MM-dd.
++ customer (CustomerInInvoiceS,required) - Identificador del cliente asociado a la factura.
++ cost_center: 235 (number) - Centro de costo, el campo es obligatorio según la configuración del comprobante
++ currency (Currency) - Código de Moneda Extranjera
++ seller: 629 (number,required) - ID del vendedor asociado a la cotización.
++ items (array[ItemInWithoutTransport],required) - Productos o Servicios asociados a la cotización.
+
+## QuotationOut (object)
++ id: ``63f918c2-ca65-4edc-a7db-66bcdd5159fb`` (string) - Identificador de la cotización.
++ document (DocumentC,required) - Tipo de Comprobante (Para verificar la configuración ir a Siigo Nube en el menú Configuración > Ventas > Documentos > Cotizaciones)
++ number: 22 (number) - Consecutivo/número del comprobante.
++ name: ``C-1-22`` (string) - Tipo de Comprobante + Código de Comprobante + Número de Comprobante
++ date: ``2023-12-15`` (string) - Fecha de la cotización, formato yyyy-MM-dd.
++ customer (CustomerOutInvoice) - Identificador del cliente asociado a la cotización.*Revisar
++ cost_center: 235 (number) - Centro de costo.
++ currency (Currency) - Código de Moneda Extranjera
++ total: 2546.05 (number) - Total de la cotización.
++ seller: 629 (number) - ID del vendedor asociado a la cotización.
++ items (array[ItemOut]) - Productos o Servicios asociados a la cotización.
++ public_url: https://publicview.siigo.com/document?data=MS4ruap0JuOL8dao3oKEMa (string) - Url de la vista pública de la cotización
++ metadata (Metadata) - Información acerca del documento.
 
 ## InvoiceBatchInIndiviual (object)
 + idempotency_key: 12345678 (string,required) - Identificador externo de la factura que se va a crear
@@ -2054,7 +2115,7 @@ Nombre          |Tipo                          |Descripción  |Características
 code            |*string*          | Código único del producto. | Campo obligatorio, alfanúmerico, debe ser único, NO permite espacios,  máximo  30 carácteres.
 name            |*string*                      | Nombre del producto.  | Campo obligatorio,  máximo  100 caracteres, permite caracteres especiales  y espacios.
 account_group   |*number*                      | Id de la clasificación de inventario <a href="https://siigoapi.docs.apiary.io/#reference/catalogos/grupos-de-inventario/grupos-de-inventario">**/account-groups**</a>  | Campo obligatorio, debe estar creado en Siigo Nube y estar activo.
-type            |*string*                      | Tipo del producto: Product, Service, ConsumerGood    | Campo opcional para identifcar el producto, si no se envia toma por defecto el valor "Prodcut".
+type            |*string*                      | Tipo del producto: Product, Service, Combo    | Campo opcional para identifcar el producto, si no se envia toma por defecto el valor "Product", el type "Combo" solo es permitido para usuarios con Siigo Nube Premium.
 stock_control   |*boolean*                      | Manejo del  control  de inventario  | Campo booleano opcional, si no se envia por defecto toma "false".
 active          |*boolean*                      | Estado del producto en Siigo, valor por default true. |   Campo tipo booleano, opcional, si no se envia por defecto toma "true".
 tax_classification    |*string*                      | Tipo del producto: Taxed, Exempt o Excluded  |  Campo tipo string, opcional, si no se envia por defecto toma el tipo "taxed".
@@ -2074,12 +2135,33 @@ barcode            |*string*                      | Código de barras.  |   Camp
 brand            |*string*                      | Marca.   |   Campo tipo string, opcional, permite espacios, alfanúmerico de máximo 50 carácteres.
 tariff            |*string*                      | Código arancelario.  |   Campo tipo string, opcional, númerico de máximo 10 carácteres.
 model            |*string*                      | Modelo.   |   Campo tipo string, opcional, permite espacios, alfanúmerico de máximo 50 carácteres.
+components.code           |*string*                      | Código de componente de un combo.  |   Campo tipo string, se utiliza solo para productos de tipo Combo, para indicar el código de un producto existente y activo en Siigo Nube que será componente del combo.
+components.quantity            |*number*                      | Cantidad de componente de un combo.   |   Campo numérico, para indicar la cantidad de producto que compone el combo.
+
 
 **[¿Como crear productos en Siigo Nube?](https://siigonube.portaldeclientes.siigo.com/basedeconocimiento/creacion-de-productos-servicios/)**
 
-
-
 Aquí encontrarás las **[Unidades de Medida](https://saprodcentralassets.blob.core.windows.net/siigoapi/documentation/unidades%20de%20medida.xlsx)** que puedes utilizar en Siigo API.
+
+* **Json de ejemplo de creación de un producto de tipo "Combo":** 
+
+        {
+            "type": "Combo",
+            "code": "1234",
+            "name": "Combo de prueba",
+            "account_group": 121,
+            "components": [
+                {
+                "code": "product-1",
+                "quantity": 100
+                },
+                {
+                "code": "product-2",
+                "quantity": 20
+                }
+            ]
+        }
+
 
 + Request (application/json)
 
@@ -2140,6 +2222,8 @@ Nombre                   |Tipo                   |Descripción
 **created**              |string                 | La fecha en la que se creó el producto.
 **last_updated**         |string                 | La fecha en la que se actualizó el producto por última vez.
 
+**Para los productos de tipo "Combo" se retornará el array "components" con el id, code y name de los componentes del combo** 
+
 **[¿Como consultar productos en Siigo Nube?](https://siigonube.portaldeclientes.siigo.com/basedeconocimiento/informe-de-productos/)**
 
 
@@ -2185,6 +2269,8 @@ Param                  |Type       |Description
 
 **Date and time in UTC**: yyyy-MM-ddTHH:mm:ssZ
 
+**Para los productos de tipo "Combo" se retornará el array "components" con el id, code y name de los componentes del combo** 
+
 + Parameters
     + created_start (optional, type, `2021-02-17`)
 
@@ -2229,6 +2315,11 @@ barcode            |*string*                      | Código de barras.  |   Camp
 brand            |*string*                      | Marca.   |   Campo tipo string, opcional, permite espacios, alfanúmerico de máximo 50 carácteres.
 tariff            |*string*                      | Código arancelario.  |   Campo tipo string, opcional, númerico de máximo 10 carácteres.
 model            |*string*                      | Modelo.   |   Campo tipo string, opcional, permite espacios, alfanúmerico de máximo 50 carácteres.
+components.code           |*string*                      | Código de componente de un combo.  |   Campo tipo string, se utiliza solo para productos de tipo Combo, para indicar el código de un producto existente y activo en Siigo Nube que será componente del combo.
+components.quantity            |*number*                      | Cantidad de componente de un combo.   |   Campo numérico, para indicar la cantidad de producto que compone el combo.
+
+**No se podrán modificar los componentes de un Combo si este ya ha tenido movimientos, es decir, ya se ha relacionado en documentos**
+
 
 **[¿Como editar productos en Siigo Nube?](https://siigonube.portaldeclientes.siigo.com/basedeconocimiento/modificar-editar-productos-servicios/)**
 
@@ -2274,6 +2365,88 @@ Borrar un producto o servicio.
                 "deleted": true
             }
             
+# Group Categorías de Inventario
+Funcionalidad para la clasificación de inventarios en Siigo Nube.
+
+## Consultar Grupos de Inventario [GET //v1/account-groups]
+Este endpoint te permite consultar la clasificación de inventarios, la cuál corresponde a la clasificación general de los productos o servicios que se comercializan en la empresa y que se debe configurar previamente en Siigo Nube.
+
+**Datos que encontrarás en el response:**
+Nombre          |Tipo                          |Descripción
+----------------|------------------------------|---------------
+id              |*number*                      | Id de la clasificación de inventario, este dato lo necesitarás para crear posteriormente un producto o servicio.
+name            |*string*                      | Nombre de la clasificación de inventario.
+active          |*boolean*                     | Indica si la clasificación de inventario está en uso.
+
+**[¿Como configurar mis grupos de inventario en Siigo Nube?](https://siigonube.portaldeclientes.siigo.com/basedeconocimiento/grupo-inventario-servicios/)**
+
++ Request (application/json)
+
+    + Headers
+
+            Authorization: [access_token]
+            Partner-Id: [nombre de la aplicación que estás integrando]
+
++ Response 200 (application/json)
+
+    + Attributes (array[AccountGroup])
+
+    + Body
+        
+
+
+## Crear Grupos de Inventario [POST /v1/account-groups]
+Este endpoint te permite crear categorías de inventarios, la cuál corresponde a la clasificación general de los productos o servicios que se comercializan en la empresa.
+
+Nombre                   |Tipo                   |Descripción  |Características
+-------------------------|-----------------------|--------------- |-------------
+**code**                 |String, required                 | Campo para el código de la categoría de inventario. |  Campo obligatorio, máximo 10 caracteres alfanuméricos, no se permiten caracteres especiales ni espacios.
+**name**          |String, required        | Campo para el nombre de la categoría de inventario.  | Campo obligatorio, máximo 50 caracteres.
+
+**[¿Como configurar mis grupos de inventario en Siigo Nube?](https://siigonube.portaldeclientes.siigo.com/basedeconocimiento/grupo-inventario-servicios/)**
+
++ Request (application/json)
+
+    + Headers
+
+            Authorization: [access_token]
+            Partner-Id: [nombre de la aplicación que estás integrando]
+
+    + Attributes (AccounGroupIn)
+    
++ Response 201 (application/json)
+
+    + Attributes (AccountGroup)
+
+    + Body
+        
+
+## Editar Grupos de Inventario [PUT /v1/account-groups/id]
+Este endpoint te permite editar el nombre y código de categorías de inventarios, la cuál corresponde a la clasificación general de los productos o servicios que se comercializan en la empresa.
+
+Nombre                   |Tipo                   |Descripción  |Características
+-------------------------|-----------------------|--------------- |-------------
+**code**                 |String, required                 | Campo para el código de la categoría de inventario. |  Campo obligatorio, máximo 10 caracteres alfanuméricos, no se permiten caracteres especiales ni espacios.
+**name**          |String, required        | Campo para el nombre de la categoría de inventario.  | Campo obligatorio, máximo 50 caracteres.
+
+**[¿Como configurar mis grupos de inventario en Siigo Nube?](https://siigonube.portaldeclientes.siigo.com/basedeconocimiento/grupo-inventario-servicios/)**
+
++ Request (application/json)
+
+    + Headers
+
+            Authorization: [access_token]
+            Partner-Id: [nombre de la aplicación que estás integrando]
+
+    + Attributes (AccounGroupIn)
+    
++ Response 201 (application/json)
+
+    + Attributes (AccountGroup)
+
+    + Body
+        
+
 # Group Clientes
 Los clientes o terceros son las personas naturales y/o jurídicas que manejan relaciones comerciales o administrativas con la empresa.
 
@@ -2323,7 +2496,7 @@ ID       |Tipo de identificación| Caracteristicas del campo "identification" se
 22       | Cédula de extranjería  |  Debe ser tipo alfanumérico, con una longitud entre 1 y 20 dígitos.
 42       | Documento de identificación extranjero |  Debe ser tipo alfanumérico, con una longitud entre 1 y 20 dígitos.
 50       | NIT de otro país  | Debe ser tipo alfanumérico, con una longitud entre 1 y 20 dígitos.
-R-00-PN  | No obligado a registrarse en el RUT PN | Debe ser tipo alfanumérico, con una longitud entre 1 y 20 dígitos.
+R-00-PN  | No obligado a registrarse en el RUT PN | Debe ser tipo alfanumérico, con una longitud entre 1 y 13 dígitos.
 91       | NUIP  |  Debe ser tipo alfanumérico, con una longitud entre 1 y 20 dígitos.
 41       | Pasaporte | Debe ser tipo alfanumérico, con una longitud entre 1 y 20 dígitos.
 47       | Permiso especial de permanencia PEP | Debe ser tipo alfanumérico, con una longitud entre 1 y 20 dígitos.
@@ -3444,6 +3617,7 @@ Para visualizar una factura en Siigo Nube puedes ingresar al ícono de la lupa q
 
     + Body        
     
+
 ## XML Factura de Venta [GET /v1/invoices/{id}/xml]
 
 Ahora podras consultar el XML de las facturas en formato base 64 desde el endpoint de invoices con el id de la factura/xml
@@ -3469,6 +3643,238 @@ En el reporte de Comprobantes por cliente encontraras una columna llamada XML pa
     
 
 
+
+# Group Cotizaciones
+Comprobante que permite registrar las cantidades y valores de los productos y/o servicios que estás vendiendo en la empresa.
+
+## Crear Cotización  [POST /v1/quotations]
+Crear una nueva cotización teniendo en cuenta que el cliente o tercero, y los productos ya se encuentren creados en Siigo Nube.
+
+Nombre                      |Tipo          |Descripción     |  Características
+----------------------------|--------------|------------------ |----------------
+**document.id**                |*number*      | Identificador del tipo de comprobante. | Campo obligatorio,  debe existir en Siigo previamente, se puede consultar por: <a href="https://siigoapi.docs.apiary.io/#reference/cotizaciones/consultar-tipos-de-cotizacion/consultar-tipos-de-cotizacion">**/document-types**</a>
+**date**                |*date*      | Fecha de comprobante. | Campo obligatorio.
+**number**                |*number*      | Consecutivo/número del comprobante  |  El campo es opcional, se hace obligatorio si se tiene marcada numeración manual el tipo de cotización, si se envia debe ser un consecutivo que no exista en Nube.
+**customer.identification**     |*string*      | Número de identificación del cliente. | Campo obligatorio, debe existir en Siigo Nube, debe estar activo.
+**customer.branch_office**   |*number*      | Número de Sucursal del cliente. | Campo opcional, si no se envia toma por defecto el 0.
+**seller**                    |*number*      | Identificador del vendedor asociado a la cotización. | Campo obligatorio, debe existir en Siigo Nube, se puede consultar por la ruta: <a href="https://siigoapi.docs.apiary.io/#reference/catalogos/usuarios">**/users**</a>
+**cost_center**                 |*number*      | Identificador del Centro de costos.  | Campo opcional, debe existir en Siigo Nube y estar activo.
+**currency.code**               |*string*      | Código de moneda. | Campo opcional, debe tener la marcación de manejo de moneda extranjera, si no se envia toma por defecto la moneda local,  debe existir en Siigo Nube.
+**currency.exchange_rate**      |*number*      | Tasa / Valor en moneda extranjera. | Campo opcional, debe tener la marcación de manejo de moneda extranjera, obligatorio si se envía el objeto currency.
+**items.code**            |*string*                 | Código único del producto.  | Campo obligatorio, debe existir en Siigo Nube y estar activo, alfanúmerico.
+**items.description**     |*string*                 | Nombre o descripción del producto/servicio. |  Campo opcional, si no maneja descripción larga en la configuración y se envia toma el nombre del producto. Si maneja descripción larga en la configuración del producto y no se envia debe tomar la descipción de la configuración del producto. Si se envia y viene vacio lo tomara así en la cotización. 
+**items.quantity**        |*number*                 | Cantidad a cotizar del item |  Campo obligatorio, númerico, solo se pueden usar 2 decimales, valor máximo 9999999.99 
+**items.price**           |*number*                 | Precio del producto / Valor unitario. |  Campo obligatorio, númerico, máximo 6 decimales, valor máximo 99999999999.99
+**items.discount**        |*number*                 | Valor de descuento del producto. | Campo opcional, puede ser por valor o porcentaje dependiendo de la configuración de la cotización.
+**items.taxes.id**        |*number*                 | Identificador único del impuesto. | Campo opcional,  es númerico sin decimales y corresponde al identificador del impuesto, se puede consultar por la ruta: <a href="https://siigoapi.docs.apiary.io/#reference/catalogos/impuestos/impuestos">**/taxes**</a>, no son permitidos dos impuestos del mismo tipo en un ítem.
+
+
++ Request (application/json)
+
+    + Headers
+
+            Authorization: [access_token]
+            Partner-Id: [nombre de la aplicación que estás integrando]
+
+    + Attributes (QuotationIn)
+    
+
++ Response 201 (application/json)
+
+    + Attributes (QuotationOut)
+
+    + Body
+
+
+
+    
+## Editar Cotización  [PUT /v1/quotations/{id}]
+Editar una cotización existente en Siigo Nube, el tipo de comprobante, consecutivo, cliente y tipo de moneda NO son editables.
+
+Nombre                      |Tipo          |Descripción     |  Características
+----------------------------|--------------|------------------ |----------------
+**document.id**                |*number*      | Identificador del tipo de comprobante. | Campo obligatorio, no es editable, debe ser el mismo de la cotización original.
+**date**                |*date*      | Fecha de comprobante. | Campo obligatorio.
+**number**                |*number*      | Consecutivo/número del comprobante  |  El campo es opcional, se hace obligatorio si se tiene marcada numeración manual el tipo de cotización, si se envia debe ser el mismo consecutivo, no es editable.
+**customer.identification**     |*string*      | Número de identificación del cliente. | Campo obligatorio, debe ser el mismo de la cotización original, no es editable.
+**customer.branch_office**   |*number*      | Número de Sucursal del cliente. | Campo opcional, si no se envia toma por defecto el 0.
+**seller**                    |*number*      | Identificador del vendedor asociado a la cotización. | Campo obligatorio, debe existir en Siigo Nube, se puede consultar por la ruta: <a href="https://siigoapi.docs.apiary.io/#reference/catalogos/usuarios">**/users**</a>
+**cost_center**                 |*number*      | Identificador del Centro de costos.  | Campo opcional, debe existir en Siigo Nube y estar activo.
+**currency.code**               |*string*      | Código de moneda. | Campo opcional, debe tener la marcación de manejo de moneda extranjera, si no se envia toma por defecto la moneda local, debe ser la misma de la cotización original, no es editable.
+**currency.exchange_rate**      |*number*      | Tasa / Valor en moneda extranjera. | Campo opcional, debe tener la marcación de manejo de moneda extranjera, obligatorio si se envía el objeto currency.
+**items.code**            |*string*                 | Código único del producto.  | Campo obligatorio, debe existir en Siigo Nube y estar activo, alfanúmerico.
+**items.description**     |*string*                 | Nombre o descripción del producto/servicio. |  Campo opcional, si no maneja descripción larga en la configuración y se envia toma el nombre del producto. Si maneja descripción larga en la configuración del producto y no se envia debe tomar la descipción de la configuración del producto. Si se envia y viene vacio lo tomara así en la cotización. 
+**items.quantity**        |*number*                 | Cantidad a cotizar del item |  Campo obligatorio, númerico, solo se pueden usar 2 decimales, valor máximo 9999999.99 
+**items.price**           |*number*                 | Precio del producto / Valor unitario. |  Campo obligatorio, númerico, máximo 6 decimales, valor máximo 99999999999.99
+**items.discount**        |*number*                 | Valor de descuento del producto. | Campo opcional, puede ser por valor o porcentaje dependiendo de la configuración de la cotización.
+**items.taxes.id**        |*number*                 | Identificador único del impuesto. | Campo opcional,  es númerico sin decimales y corresponde al identificador del impuesto, se puede consultar por la ruta: <a href="https://siigoapi.docs.apiary.io/#reference/catalogos/impuestos/impuestos">**/taxes**</a>, no son permitidos dos impuestos del mismo tipo en un ítem.
+
+
++ Request (application/json)
+
+    + Headers
+
+            Authorization: [access_token]
+            Partner-Id: [nombre de la aplicación que estás integrando]
+
+    + Attributes (QuotationIn)
+    
+
++ Response 201 (application/json)
+
+    + Attributes (QuotationOut)
+
+    + Body
+
+
+
+## Consultar Tipos de Cotización [GET /v1/document-types?type=C]
+Lista todos los tipos de Cotización que se encuentran configurados en Siigo Nube y sus características.
+
+**Datos que encontrarás en el response:**
+Nombre          |Tipo                          |Descripción
+----------------|------------------------------|---------------
+id              |*number*                      | Identificador único del tipo de cotización, este dato se debe enviar en las creaciones de cotización en el campo document.id
+code            |*string*                      | Código asignado en Siigo Nube al tipo de cotización.
+name            |*string*                      | Nombre del tipo de cotización.
+description     |*string*                      | Descripción del tipo de cotización.
+type            |*string*                      | Indica el tipo de documento, en este caso "C" para cotización.
+active          |*boolean*                     | Estado del tipo de documento.
+cost_center      |*boolean*                     | Indica si se pueden manejar centros de costo o no en este tipo de cotización.
+cost_center_mandatory       |*boolean*                     | Indica si se maneja centro de costo de forma obligatoria en este tipo de cotización.
+automatic_number    |*boolean*                     | Indica si se maneja numeración automática o no en este tipo de cotización, si es false, en la creación de cotización usando este tipo, se debe enviar el campo "number".
+consecutive       |*number*                      | Número del próximo consecutivo de cotización.
+discount_type     |*string*                      | Indica el tipo de descuento que se maneja en este tipo de cotización "Percentage" o "Value" de esto depende la forma en la que envias un descuento en un ítem al crear cotización de este tipo.
+decimals      |*boolean*                     | Indica si se manejan decimales en este tipo de cotización.
+
+
++ Request (application/json)
+
+    + Headers
+
+            Authorization: [access_token]
+            Partner-Id: [nombre de la aplicación que estás integrando]
+
++ Response 200 (application/json)
+
+    + Attributes (array[DocumentTypeC])
+
+    + Body    
+    
+    
+
+## Consultar Cotización [GET /v1/quotations/{quotation_id}]
+Consultar una cotización por su id.
+
+Esta es la información que obtendrás de la factura de venta consultada:
+Nombre                   |Tipo                   |Descripción
+-------------------------|-----------------------|---------------
+**id**                   |string                 | Identificador de la cotización.
+**document.id**          |number                 | Identificador del comprobante.
+**number**               |number                 | Consecutivo/número del comprobante.
+**name**                 |string                 | Tipo de Comprobante + Código de Comprobante + Número de Comprobante
+**date**                 |string                 | Fecha de la cotización, formato yyyy-MM-dd.
+**customer.id**          |string                 | Identificador del cliente.
+**customer.identification**         |string                 |Número de identificación del cliente.
+**customer.branch_office**          |string                 |Sucursal, valor por default 0.
+**cost_center**            |number                 | Indica el Centro de costo de la cotización.
+**currency.code**          |string                 | Código de moneda.
+**currency.exchange_rate**          |string                 | Tasa / Valor en moneda extranjera.
+**seller**                |number                 | ID del vendedor asociado a la cotización.
+**items.id**              |string                 | Identificador del producto/servicio.
+**items.code**            |string                 | Código único del producto.
+**items.description**     |string                 | Nombre o descripción del producto/servicio.
+**items.quantity**        |number                 | Cantidad.
+**items.price**           |number                 | Precio del producto / Valor unitario.
+**items.discount.percentage**        |number                 | Porcentaje de descuento del producto, si lo tuvo.
+**items.discount.value**        |number                 | Valor de descuento del producto, si lo tuvo.
+**items.taxes.id**        |number                 | Identificador único del impuesto.
+**items.taxes.name**      |string                 | Nombre del impuesto.
+**items.taxes.percentage**   |number                 | Porcentaje de impuesto del producto
+**items.taxes.value**        |number                 | Valor de impuesto del producto
+**items.taxes.total**        |number                 | Total del producto, incluye impuestos.
+
+
+Para visualizar una cotización en Siigo Nube puedes ingresar al ícono de la lupa que corresponde al Buscador, digita el número y oprime en Cotización.
+
++ Parameters
+    + quotation_id (string,`b446fbc3-99c5-4c2d-8a28-1c0d3721ab91`)
+
++ Request
+    
+    + Headers
+            
+            Authorization: [access_token]
+            Partner-Id: [nombre de la aplicación que estás integrando]
+
++ Response 200 (application/json)
+
+    + Attributes (QuotationOut)
+
+    + Body
+
+
+
+## Listar Cotizaciones [GET /v1/quotations{?created_start}]
+Lista todas las cotizaciones.
+
+Podrás realizar filtros al listado de facturas que deseas obtener usando los siguientes parámetros:
+
+**Query Parameters**
+
+Param                      |Type       |Description
+---------------------------|-----------|-----------------------------------------------------------------------------------
+**created_start**          |Date       | Devuelve resultados donde la fecha de creación es mayor o igual que este valor.
+**created_end**            |Date       | Devuelve resultados donde la fecha de creación es menor o igual que este valor.
+**name**                   |Date       | Permite consultar Cotización por nombre ejemplo, C-003-457.
+**customer_identification**|Date       | Permite consultar Cotizaciones por cliente.
+**customer_branch_office** |Date       | Permite consultar Cotizaciones por sucursal.
+
+**Date**: yyyy-MM-dd
+
+**Date and time in UTC**: yyyy-MM-ddTHH:mm:ssZ
+
++ Parameters
+    + created_start (optional, type, `2025-02-17`)
+
++ Request (application/json)
+
+    + Headers
+
+            Authorization: [access_token]
+            Partner-Id: [nombre de la aplicación que estás integrando]
+
++ Response 200 (application/json)
+
+    + Attributes (QuotationsOutList)
+
+    + Body
+
+##  Borrar Cotización [DELETE /v1/invoices/id]
+
+Método para eliminar cotizaciones creadas previamente.
+
++ Request (application/json)
+
+    + Headers
+    
+            Authorization: [access_token]
+            Partner-Id: [nombre de la aplicación que estás integrando]
+    + Body
+    
+
++ Response 200 (application/json)
+
+    + Headers
+    
+    + Body
+    
+            {
+                "id": "63f918c2-ca65-4edc-a7db-66bcdd5159fb",
+                "deleted": true
+            }
+    
+    
 
 # Group Notas Crédito 
 Comprobante que permite registrar las devoluciones parciales o totales de una factura de venta.
@@ -4861,34 +5267,10 @@ currency.balance   |*string*              | Valor en moneda extranjera del venci
     + Body     
     
 
+
+
 # Group Catálogos
 Enpoints que listan los diferentes catálogos de Siigo.
-
-## Grupos de Inventario [GET /v1/account-groups]
-Este endpoint te permite consultar la clasificación de inventarios, la cuál corresponde a la clasificación general de los productos o servicios que se comercializan en la empresa y que se debe configurar previamente en Siigo Nube.
-
-**Datos que encontrarás en el response:**
-Nombre          |Tipo                          |Descripción
-----------------|------------------------------|---------------
-id              |*number*                      | Id de la clasificación de inventario, este dato lo necesitarás para crear posteriormente un producto o servicio.
-name            |*string*                      | Nombre de la clasificación de inventario.
-active          |*boolean*                     | Indica si la clasificación de inventario está en uso.
-
-**[¿Como configurar mis grupos de inventario en Siigo Nube?](https://siigonube.portaldeclientes.siigo.com/basedeconocimiento/grupo-inventario-servicios/)**
-
-+ Request (application/json)
-
-    + Headers
-
-            Authorization: [access_token]
-            Partner-Id: [nombre de la aplicación que estás integrando]
-
-+ Response 200 (application/json)
-
-    + Attributes (array[AccountGroup])
-
-    + Body
-        
 
 ## Impuestos [GET /v1/taxes]
 Este endpoint te permite consultar el listado de impuestos creados en Siigo Nube para utilizarlos en la creación de comprobantes.

@@ -1,7 +1,8 @@
 {
   "name": "siigo-mcp-server",
-  "version": "2.1.0",
+  "version": "3.0.0",
   "description": "Model Context Protocol (MCP) server for Siigo Colombian accounting software API integration",
+  "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
@@ -13,7 +14,7 @@
     "clean": "rm -rf dist"
   },
   "bin": {
-    "siigo-mcp": "./bin/siigo-mcp"
+    "siigo-mcp": "./dist/index.js"
   },
   "files": [
     "dist/",
@@ -47,9 +48,10 @@
     "node": ">=18.0.0"
   },
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^0.6.0",
+    "@modelcontextprotocol/sdk": "^1.26.0",
     "axios": "^1.6.0",
-    "dotenv": "^16.3.0"
+    "dotenv": "^16.3.0",
+    "zod": "^3.25.0"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",
