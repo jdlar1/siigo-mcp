@@ -1,5 +1,5 @@
 {
-  "name": "siigo-mcp-server",
+  "name": "@jdlar/siigo-mcp",
   "version": "3.0.1",
   "description": "Model Context Protocol (MCP) server for Siigo Colombian accounting software API integration",
   "type": "module",
@@ -44,6 +44,9 @@
     "url": "https://github.com/jdlar1/siigo-mcp/issues"
   },
   "homepage": "https://github.com/jdlar1/siigo-mcp#readme",
+  "publishConfig": {
+    "access": "public"
+  },
   "engines": {
     "node": ">=18.0.0"
   },

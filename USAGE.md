@@ -5,13 +5,13 @@
 ### Option 1: NPX (Recommended - No Installation Required)
 ```bash
 # Set environment variables and run directly
-SIIGO_USERNAME=your_username SIIGO_ACCESS_KEY=your_key SIIGO_PARTNER_ID=your_app npx siigo-mcp-server
+SIIGO_USERNAME=your_username SIIGO_ACCESS_KEY=your_key SIIGO_PARTNER_ID=your_app npx @jdlar/siigo-mcp
 ```
 
 ### Option 2: Global Installation
 ```bash
 # 1. Install globally
-npm install -g siigo-mcp-server
+npm install -g @jdlar/siigo-mcp
 
 # 2. Set environment variables and run
 SIIGO_USERNAME=your_username SIIGO_ACCESS_KEY=your_key SIIGO_PARTNER_ID=your_app siigo-mcp
@@ -25,7 +25,7 @@ echo "SIIGO_ACCESS_KEY=your_key" >> .env
 echo "SIIGO_PARTNER_ID=your_app" >> .env
 
 # Run with npx
-npx siigo-mcp-server
+npx @jdlar/siigo-mcp
 
 # Or run with global installation
 siigo-mcp
@@ -46,7 +46,7 @@ Add to your Claude Desktop config file:
   "mcpServers": {
     "siigo": {
       "command": "npx",
-      "args": ["siigo-mcp-server"],
+      "args": ["@jdlar/siigo-mcp"],
       "env": {
         "SIIGO_USERNAME": "your_username",
         "SIIGO_ACCESS_KEY": "your_access_key",
@@ -78,7 +78,7 @@ For other MCP clients, use either:
 
 **NPX (Recommended):**
 - **Command**: `npx`
-- **Args**: `["siigo-mcp-server"]`
+- **Args**: `["@jdlar/siigo-mcp"]`
 - **Transport**: stdio
 - **Environment**: Set `SIIGO_USERNAME`, `SIIGO_ACCESS_KEY`, and `SIIGO_PARTNER_ID`
 

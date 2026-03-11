@@ -38,12 +38,12 @@ This MCP server provides access to all Siigo API endpoints:
 
 ### Option 1: NPX (Recommended - No Installation Required)
 ```bash
-npx siigo-mcp-server
+npx @jdlar/siigo-mcp
 ```
 
 ### Option 2: Global Installation
 ```bash
-npm install -g siigo-mcp-server
+npm install -g @jdlar/siigo-mcp
 siigo-mcp
 ```
 
@@ -91,7 +91,7 @@ Add to your Claude Desktop config (`claude_desktop_config.json`):
   "mcpServers": {
     "siigo": {
       "command": "npx",
-      "args": ["siigo-mcp-server"],
+      "args": ["@jdlar/siigo-mcp"],
       "env": {
         "SIIGO_USERNAME": "your_username",
         "SIIGO_ACCESS_KEY": "your_access_key",

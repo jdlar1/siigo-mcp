@@ -53,7 +53,7 @@ const client = new SiigoClient(config);
 
 const server = new McpServer(
   {
-    name: 'siigo-mcp-server',
+    name: '@jdlar/siigo-mcp',
     version: '3.0.1',
   },
   {
