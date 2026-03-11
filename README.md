@@ -2,7 +2,7 @@
 
 A Model Context Protocol (MCP) server that provides full integration with the Siigo API, enabling access to Colombian accounting software features including products, customers, invoices, quotations, purchases, credit notes, vouchers, payment receipts, journals, webhooks, and more.
 
-**v3.0.0** - Full Siigo API parity with 68 tools, MCP SDK v1.26, Zod schemas, and complete TypeScript type safety.
+**v3.0.1** - Full Siigo API parity with 68 tools, MCP SDK v1.27, Zod schemas, improved MCP error propagation, and complete TypeScript type safety.
 
 ## Features
 

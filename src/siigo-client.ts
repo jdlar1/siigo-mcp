@@ -25,6 +25,17 @@ import {
   SiigoFixedAsset,
 } from './types.js';
 
+export class SiigoApiError<T = unknown> extends Error {
+  constructor(
+    message: string,
+    public readonly response?: SiigoApiResponse<T>,
+    public readonly status?: number,
+  ) {
+    super(message);
+    this.name = 'SiigoApiError';
+  }
+}
+
 export class SiigoClient {
   private config: SiigoConfig;
   private httpClient: AxiosInstance;
@@ -58,9 +69,73 @@ export class SiigoClient {
       this.tokenExpiry = new Date(Date.now() + (response.data.expires_in * 1000));
 
       this.httpClient.defaults.headers.common['Authorization'] = `Bearer ${this.token}`;
-    } catch (error) {
-      throw new Error(`Authentication failed: ${error}`);
+    } catch (error: unknown) {
+      if (axios.isAxiosError(error)) {
+        throw new SiigoApiError(
+          `Authentication failed: ${this.getErrorMessage(error.response?.data, error.message)}`,
+          error.response?.data,
+          error.response?.status,
+        );
+      }
+
+      throw new Error(`Authentication failed: ${error instanceof Error ? error.message : String(error)}`);
     }
+  }
+
+  private getErrorMessage(responseData?: SiigoApiResponse<unknown>, fallback = 'Unknown API error'): string {
+    const firstError = responseData?.errors?.[0];
+
+    if (firstError?.Message) {
+      return firstError.Message;
+    }
+
+    return fallback;
+  }
+
+  private async fetchAllPages<T>(
+    endpoint: string,
+    params?: Record<string, unknown>,
+  ): Promise<SiigoApiResponse<T>> {
+    const firstPage = await this.makeRequest<T>('GET', endpoint, undefined, params);
+
+    if (!firstPage.results?.length || !firstPage.pagination) {
+      return firstPage;
+    }
+
+    const currentPage = firstPage.pagination.page || 1;
+    const pageSize = firstPage.pagination.page_size || firstPage.results.length;
+    const totalResults = firstPage.pagination.total_results || firstPage.results.length;
+    const totalPages = Math.max(1, Math.ceil(totalResults / pageSize));
+
+    if (currentPage >= totalPages) {
+      return firstPage;
+    }
+
+    const allResults = [...firstPage.results];
+
+    for (let page = currentPage + 1; page <= totalPages; page += 1) {
+      const nextPage = await this.makeRequest<T>('GET', endpoint, undefined, {
+        ...params,
+        page,
+        page_size: pageSize,
+      });
+
+      if (!nextPage.results?.length) {
+        break;
+      }
+
+      allResults.push(...nextPage.results);
+    }
+
+    return {
+      ...firstPage,
+      results: allResults,
+      pagination: {
+        page: 1,
+        page_size: allResults.length,
+        total_results: allResults.length,
+      },
+    };
   }
 
   private async makeRequest<T>(
@@ -84,7 +159,11 @@ export class SiigoClient {
       return response.data;
     } catch (error: unknown) {
       if (axios.isAxiosError(error) && error.response?.data) {
-        return error.response.data;
+        throw new SiigoApiError(
+          this.getErrorMessage(error.response.data, error.message),
+          error.response.data,
+          error.response.status,
+        );
       }
       throw new Error(`API request failed: ${error instanceof Error ? error.message : String(error)}`);
     }
@@ -119,12 +198,12 @@ export class SiigoClient {
     page?: number;
     page_size?: number;
   }): Promise<SiigoApiResponse<SiigoProduct>> {
-    const params: Record<string, unknown> = {};
+    const params: Record<string, unknown> = {
+      page: searchParams.page ?? 1,
+      page_size: searchParams.page_size ?? 100,
+    };
 
-    if (searchParams.page) params.page = searchParams.page;
-    if (searchParams.page_size) params.page_size = searchParams.page_size;
-
-    const response = await this.makeRequest<SiigoProduct>('GET', '/v1/products', undefined, params);
+    const response = await this.fetchAllPages<SiigoProduct>('/v1/products', params);
 
     if (!searchParams.code && !searchParams.name && !searchParams.reference) {
       return response;
@@ -158,7 +237,11 @@ export class SiigoClient {
         ...response,
         results: filteredResults,
         pagination: response.pagination
-          ? { ...response.pagination, total_results: filteredResults.length }
+          ? {
+            ...response.pagination,
+            page_size: filteredResults.length,
+            total_results: filteredResults.length,
+          }
           : undefined,
       };
     }
@@ -205,13 +288,13 @@ export class SiigoClient {
     page?: number;
     page_size?: number;
   }): Promise<SiigoApiResponse<SiigoCustomer>> {
-    const params: Record<string, unknown> = {};
-
-    if (searchParams.page) params.page = searchParams.page;
-    if (searchParams.page_size) params.page_size = searchParams.page_size;
+    const params: Record<string, unknown> = {
+      page: searchParams.page ?? 1,
+      page_size: searchParams.page_size ?? 100,
+    };
     if (searchParams.type) params.type = searchParams.type;
 
-    const response = await this.makeRequest<SiigoCustomer>('GET', '/v1/customers', undefined, params);
+    const response = await this.fetchAllPages<SiigoCustomer>('/v1/customers', params);
 
     if (!searchParams.identification && !searchParams.name) {
       return response;
@@ -246,7 +329,11 @@ export class SiigoClient {
         ...response,
         results: filteredResults,
         pagination: response.pagination
-          ? { ...response.pagination, total_results: filteredResults.length }
+          ? {
+            ...response.pagination,
+            page_size: filteredResults.length,
+            total_results: filteredResults.length,
+          }
           : undefined,
       };
     }
@@ -432,8 +519,8 @@ export class SiigoClient {
     return this.makeRequest<SiigoWebhook>('POST', '/v1/webhooks', webhook);
   }
 
-  async updateWebhook(webhook: Partial<SiigoWebhook>): Promise<SiigoApiResponse<SiigoWebhook>> {
-    return this.makeRequest<SiigoWebhook>('PUT', '/v1/webhooks', webhook);
+  async updateWebhook(id: string, webhook: Partial<SiigoWebhook>): Promise<SiigoApiResponse<SiigoWebhook>> {
+    return this.makeRequest<SiigoWebhook>('PUT', `/v1/webhooks/${id}`, webhook);
   }
 
   async deleteWebhook(id: string): Promise<SiigoApiResponse<unknown>> {

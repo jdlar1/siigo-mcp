@@ -3,7 +3,7 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { z } from 'zod';
-import { SiigoClient } from './siigo-client.js';
+import { SiigoApiError, SiigoClient } from './siigo-client.js';
 import { SiigoConfig } from './types.js';
 import * as dotenv from 'dotenv';
 
@@ -18,11 +18,15 @@ function jsonResult(data: unknown) {
 }
 
 function errorResult(toolName: string, error: unknown) {
+  const detail = error instanceof SiigoApiError && error.response
+    ? `\n${JSON.stringify(error.response, null, 2)}`
+    : '';
+
   return {
     content: [
       {
         type: 'text' as const,
-        text: `Error executing ${toolName}: ${error instanceof Error ? error.message : String(error)}`,
+        text: `Error executing ${toolName}: ${error instanceof Error ? error.message : String(error)}${detail}`,
       },
     ],
     isError: true as const,
@@ -50,7 +54,7 @@ const client = new SiigoClient(config);
 const server = new McpServer(
   {
     name: 'siigo-mcp-server',
-    version: '3.0.0',
+    version: '3.0.1',
   },
   {
     capabilities: {
@@ -1312,9 +1316,9 @@ server.registerTool(
     }),
     annotations: { readOnlyHint: false, destructiveHint: false },
   },
-  async (args) => {
+  async ({ id, ...webhook }) => {
     try {
-      return jsonResult(await client.updateWebhook(args));
+      return jsonResult(await client.updateWebhook(id, webhook));
     } catch (e) { return errorResult('siigo_update_webhook', e); }
   },
 );

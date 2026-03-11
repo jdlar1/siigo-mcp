@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.0.1] - 2026-03-11
+
+### Fixed
+- API failures now surface as proper MCP tool errors instead of success payloads, preserving Siigo error details for callers.
+- Webhook updates now target the specific webhook resource by ID.
+- Product and customer partial-match search now scans all result pages before filtering, avoiding missed matches beyond the first page.
+
+### Changed
+- Switched project package management to pnpm and added `pnpm-lock.yaml` plus `packageManager` metadata.
+- Updated direct dependencies to the latest safe patch/minor releases used by this project.
+- Added Jest smoke coverage for API error propagation, webhook updates, and paginated search behavior.
+
 ## [3.0.0] - 2026-02-13
 
 ### BREAKING CHANGES
