@@ -1,28 +1,28 @@
-import axios, { AxiosInstance, AxiosResponse } from 'axios';
-import {
-  SiigoConfig,
-  SiigoToken,
-  SiigoCustomer,
-  SiigoProduct,
-  SiigoInvoice,
-  SiigoApiResponse,
-  SiigoQuotation,
-  SiigoCreditNote,
-  SiigoVoucher,
-  SiigoPaymentReceipt,
-  SiigoPurchase,
-  SiigoJournal,
-  SiigoAccountGroupIn,
+import axios, { type AxiosInstance, type AxiosResponse } from 'axios';
+import type {
   SiigoAccountGroup,
+  SiigoAccountGroupIn,
+  SiigoApiResponse,
   SiigoBatchInvoiceRequest,
   SiigoBatchInvoiceResponse,
-  SiigoWebhook,
-  SiigoTrialBalanceParams,
-  SiigoTrialBalanceByThirdParams,
-  SiigoPdfResponse,
-  SiigoXmlResponse,
-  SiigoStampErrorsResponse,
+  SiigoConfig,
+  SiigoCreditNote,
+  SiigoCustomer,
   SiigoFixedAsset,
+  SiigoInvoice,
+  SiigoJournal,
+  SiigoPaymentReceipt,
+  SiigoPdfResponse,
+  SiigoProduct,
+  SiigoPurchase,
+  SiigoQuotation,
+  SiigoStampErrorsResponse,
+  SiigoToken,
+  SiigoTrialBalanceByThirdParams,
+  SiigoTrialBalanceParams,
+  SiigoVoucher,
+  SiigoWebhook,
+  SiigoXmlResponse,
 } from './types.js';
 
 export class SiigoApiError<T = unknown> extends Error {
@@ -66,9 +66,9 @@ export class SiigoClient {
       });
 
       this.token = response.data.access_token;
-      this.tokenExpiry = new Date(Date.now() + (response.data.expires_in * 1000));
+      this.tokenExpiry = new Date(Date.now() + response.data.expires_in * 1000);
 
-      this.httpClient.defaults.headers.common['Authorization'] = `Bearer ${this.token}`;
+      this.httpClient.defaults.headers.common.Authorization = `Bearer ${this.token}`;
     } catch (error: unknown) {
       if (axios.isAxiosError(error)) {
         throw new SiigoApiError(
@@ -92,10 +92,7 @@ export class SiigoClient {
     return fallback;
   }
 
-  private async fetchAllPages<T>(
-    endpoint: string,
-    params?: Record<string, unknown>,
-  ): Promise<SiigoApiResponse<T>> {
+  private async fetchAllPages<T>(endpoint: string, params?: Record<string, unknown>): Promise<SiigoApiResponse<T>> {
     const firstPage = await this.makeRequest<T>('GET', endpoint, undefined, params);
 
     if (!firstPage.results?.length || !firstPage.pagination) {
@@ -159,11 +156,7 @@ export class SiigoClient {
       return response.data;
     } catch (error: unknown) {
       if (axios.isAxiosError(error) && error.response?.data) {
-        throw new SiigoApiError(
-          this.getErrorMessage(error.response.data, error.message),
-          error.response.data,
-          error.response.status,
-        );
+        throw new SiigoApiError(this.getErrorMessage(error.response.data, error.message), error.response.data, error.response.status);
       }
       throw new Error(`API request failed: ${error instanceof Error ? error.message : String(error)}`);
     }
@@ -214,23 +207,17 @@ export class SiigoClient {
 
       if (searchParams.code) {
         const searchCode = searchParams.code.toLowerCase();
-        filteredResults = filteredResults.filter(product =>
-          product.code?.toLowerCase().includes(searchCode),
-        );
+        filteredResults = filteredResults.filter((product) => product.code?.toLowerCase().includes(searchCode));
       }
 
       if (searchParams.name) {
         const searchName = searchParams.name.toLowerCase();
-        filteredResults = filteredResults.filter(product =>
-          product.name?.toLowerCase().includes(searchName),
-        );
+        filteredResults = filteredResults.filter((product) => product.name?.toLowerCase().includes(searchName));
       }
 
       if (searchParams.reference) {
         const searchRef = searchParams.reference.toLowerCase();
-        filteredResults = filteredResults.filter(product =>
-          product.reference?.toLowerCase().includes(searchRef),
-        );
+        filteredResults = filteredResults.filter((product) => product.reference?.toLowerCase().includes(searchRef));
       }
 
       return {
@@ -238,10 +225,10 @@ export class SiigoClient {
         results: filteredResults,
         pagination: response.pagination
           ? {
-            ...response.pagination,
-            page_size: filteredResults.length,
-            total_results: filteredResults.length,
-          }
+              ...response.pagination,
+              page_size: filteredResults.length,
+              total_results: filteredResults.length,
+            }
           : undefined,
       };
     }
@@ -305,18 +292,14 @@ export class SiigoClient {
 
       if (searchParams.identification) {
         const searchId = searchParams.identification.toLowerCase();
-        filteredResults = filteredResults.filter(customer =>
-          customer.identification?.toLowerCase().includes(searchId),
-        );
+        filteredResults = filteredResults.filter((customer) => customer.identification?.toLowerCase().includes(searchId));
       }
 
       if (searchParams.name) {
         const searchName = searchParams.name.toLowerCase();
-        filteredResults = filteredResults.filter(customer => {
+        filteredResults = filteredResults.filter((customer) => {
           if (customer.name) {
-            return customer.name.some(nameElement =>
-              nameElement.toLowerCase().includes(searchName),
-            );
+            return customer.name.some((nameElement) => nameElement.toLowerCase().includes(searchName));
           }
           if (customer.commercial_name) {
             return customer.commercial_name.toLowerCase().includes(searchName);
@@ -330,10 +313,10 @@ export class SiigoClient {
         results: filteredResults,
         pagination: response.pagination
           ? {
-            ...response.pagination,
-            page_size: filteredResults.length,
-            total_results: filteredResults.length,
-          }
+              ...response.pagination,
+              page_size: filteredResults.length,
+              total_results: filteredResults.length,
+            }
           : undefined,
       };
     }

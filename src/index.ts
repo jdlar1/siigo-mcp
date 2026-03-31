@@ -2,10 +2,10 @@
 
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
+import * as dotenv from 'dotenv';
 import { z } from 'zod';
 import { SiigoApiError, SiigoClient } from './siigo-client.js';
-import { SiigoConfig } from './types.js';
-import * as dotenv from 'dotenv';
+import type { SiigoConfig } from './types.js';
 
 dotenv.config();
 
@@ -18,9 +18,7 @@ function jsonResult(data: unknown) {
 }
 
 function errorResult(toolName: string, error: unknown) {
-  const detail = error instanceof SiigoApiError && error.response
-    ? `\n${JSON.stringify(error.response, null, 2)}`
-    : '';
+  const detail = error instanceof SiigoApiError && error.response ? `\n${JSON.stringify(error.response, null, 2)}` : '';
 
   return {
     content: [
@@ -54,7 +52,7 @@ const client = new SiigoClient(config);
 const server = new McpServer(
   {
     name: '@jdlar/siigo-mcp',
-    version: '3.0.1',
+    version: '3.1.0',
   },
   {
     capabilities: {
@@ -81,7 +79,9 @@ server.registerTool(
   async (args) => {
     try {
       return jsonResult(await client.getProducts(args));
-    } catch (e) { return errorResult('siigo_get_products', e); }
+    } catch (e) {
+      return errorResult('siigo_get_products', e);
+    }
   },
 );
 
@@ -98,7 +98,9 @@ server.registerTool(
   async ({ id }) => {
     try {
       return jsonResult(await client.getProduct(id));
-    } catch (e) { return errorResult('siigo_get_product', e); }
+    } catch (e) {
+      return errorResult('siigo_get_product', e);
+    }
   },
 );
 
@@ -106,51 +108,78 @@ server.registerTool(
   'siigo_create_product',
   {
     title: 'Create Product',
-    description: 'Create a new product. Supports Product, Service, ConsumerGood, and Combo types. For Combo products, include a components array with code and quantity.',
+    description:
+      'Create a new product. Supports Product, Service, ConsumerGood, and Combo types. For Combo products, include a components array with code and quantity.',
     inputSchema: z.object({
-      product: z.object({
-        code: z.string().describe('Unique product code'),
-        name: z.string().describe('Product name'),
-        account_group: z.number().describe('Account group / inventory category ID'),
-        type: z.enum(['Product', 'Service', 'ConsumerGood', 'Combo']).optional().describe('Product type (default: Product)'),
-        stock_control: z.boolean().optional().describe('Enable stock control'),
-        active: z.boolean().optional().describe('Product active status'),
-        tax_classification: z.enum(['Taxed', 'Exempt', 'Excluded']).optional().describe('Tax classification'),
-        tax_included: z.boolean().optional().describe('Tax included in price'),
-        taxes: z.array(z.object({
-          id: z.number().describe('Tax ID'),
-          milliliters: z.number().optional().describe('Milliliters (for sweetened beverages tax)'),
-          rate: z.number().optional().describe('Tax rate'),
-        })).optional().describe('Product taxes'),
-        prices: z.array(z.object({
-          currency_code: z.string().describe('Currency code'),
-          price_list: z.array(z.object({
-            position: z.number().describe('Price list position'),
-            value: z.number().describe('Price value'),
-          })).describe('Price list entries'),
-        })).optional().describe('Product prices'),
-        unit: z.string().optional().describe('Unit of measure code (default: 94)'),
-        unit_label: z.string().optional().describe('Unit label for invoice printing'),
-        reference: z.string().optional().describe('Product reference / factory code'),
-        description: z.string().optional().describe('Product description'),
-        additional_fields: z.object({
-          barcode: z.string().optional(),
-          brand: z.string().optional(),
-          tariff: z.string().optional(),
-          model: z.string().optional(),
-        }).optional().describe('Additional fields'),
-        components: z.array(z.object({
-          code: z.string().describe('Component product code'),
-          quantity: z.number().describe('Component quantity'),
-        })).optional().describe('Combo product components (only for type Combo)'),
-      }).describe('Product data'),
+      product: z
+        .object({
+          code: z.string().describe('Unique product code'),
+          name: z.string().describe('Product name'),
+          account_group: z.number().describe('Account group / inventory category ID'),
+          type: z.enum(['Product', 'Service', 'ConsumerGood', 'Combo']).optional().describe('Product type (default: Product)'),
+          stock_control: z.boolean().optional().describe('Enable stock control'),
+          active: z.boolean().optional().describe('Product active status'),
+          tax_classification: z.enum(['Taxed', 'Exempt', 'Excluded']).optional().describe('Tax classification'),
+          tax_included: z.boolean().optional().describe('Tax included in price'),
+          taxes: z
+            .array(
+              z.object({
+                id: z.number().describe('Tax ID'),
+                milliliters: z.number().optional().describe('Milliliters (for sweetened beverages tax)'),
+                rate: z.number().optional().describe('Tax rate'),
+              }),
+            )
+            .optional()
+            .describe('Product taxes'),
+          prices: z
+            .array(
+              z.object({
+                currency_code: z.string().describe('Currency code'),
+                price_list: z
+                  .array(
+                    z.object({
+                      position: z.number().describe('Price list position'),
+                      value: z.number().describe('Price value'),
+                    }),
+                  )
+                  .describe('Price list entries'),
+              }),
+            )
+            .optional()
+            .describe('Product prices'),
+          unit: z.string().optional().describe('Unit of measure code (default: 94)'),
+          unit_label: z.string().optional().describe('Unit label for invoice printing'),
+          reference: z.string().optional().describe('Product reference / factory code'),
+          description: z.string().optional().describe('Product description'),
+          additional_fields: z
+            .object({
+              barcode: z.string().optional(),
+              brand: z.string().optional(),
+              tariff: z.string().optional(),
+              model: z.string().optional(),
+            })
+            .optional()
+            .describe('Additional fields'),
+          components: z
+            .array(
+              z.object({
+                code: z.string().describe('Component product code'),
+                quantity: z.number().describe('Component quantity'),
+              }),
+            )
+            .optional()
+            .describe('Combo product components (only for type Combo)'),
+        })
+        .describe('Product data'),
     }),
     annotations: { readOnlyHint: false, destructiveHint: false },
   },
   async ({ product }) => {
     try {
       return jsonResult(await client.createProduct(product));
-    } catch (e) { return errorResult('siigo_create_product', e); }
+    } catch (e) {
+      return errorResult('siigo_create_product', e);
+    }
   },
 );
 
@@ -161,14 +190,16 @@ server.registerTool(
     description: 'Update an existing product',
     inputSchema: z.object({
       id: z.string().describe('Product ID'),
-      product: z.record(z.unknown()).describe('Product data to update (partial)'),
+      product: z.record(z.string(), z.unknown()).describe('Product data to update (partial)'),
     }),
     annotations: { readOnlyHint: false, destructiveHint: false },
   },
   async ({ id, product }) => {
     try {
       return jsonResult(await client.updateProduct(id, product));
-    } catch (e) { return errorResult('siigo_update_product', e); }
+    } catch (e) {
+      return errorResult('siigo_update_product', e);
+    }
   },
 );
 
@@ -185,7 +216,9 @@ server.registerTool(
   async ({ id }) => {
     try {
       return jsonResult(await client.deleteProduct(id));
-    } catch (e) { return errorResult('siigo_delete_product', e); }
+    } catch (e) {
+      return errorResult('siigo_delete_product', e);
+    }
   },
 );
 
@@ -206,7 +239,9 @@ server.registerTool(
   async (args) => {
     try {
       return jsonResult(await client.searchProducts(args));
-    } catch (e) { return errorResult('siigo_search_products', e); }
+    } catch (e) {
+      return errorResult('siigo_search_products', e);
+    }
   },
 );
 
@@ -225,7 +260,9 @@ server.registerTool(
   async () => {
     try {
       return jsonResult(await client.getAccountGroups());
-    } catch (e) { return errorResult('siigo_get_account_groups', e); }
+    } catch (e) {
+      return errorResult('siigo_get_account_groups', e);
+    }
   },
 );
 
@@ -243,7 +280,9 @@ server.registerTool(
   async (args) => {
     try {
       return jsonResult(await client.createAccountGroup(args));
-    } catch (e) { return errorResult('siigo_create_account_group', e); }
+    } catch (e) {
+      return errorResult('siigo_create_account_group', e);
+    }
   },
 );
 
@@ -262,7 +301,9 @@ server.registerTool(
   async ({ id, code, name }) => {
     try {
       return jsonResult(await client.updateAccountGroup(id, { code, name }));
-    } catch (e) { return errorResult('siigo_update_account_group', e); }
+    } catch (e) {
+      return errorResult('siigo_update_account_group', e);
+    }
   },
 );
 
@@ -285,7 +326,9 @@ server.registerTool(
   async (args) => {
     try {
       return jsonResult(await client.getCustomers(args));
-    } catch (e) { return errorResult('siigo_get_customers', e); }
+    } catch (e) {
+      return errorResult('siigo_get_customers', e);
+    }
   },
 );
 
@@ -302,7 +345,9 @@ server.registerTool(
   async ({ id }) => {
     try {
       return jsonResult(await client.getCustomer(id));
-    } catch (e) { return errorResult('siigo_get_customer', e); }
+    } catch (e) {
+      return errorResult('siigo_get_customer', e);
+    }
   },
 );
 
@@ -312,55 +357,78 @@ server.registerTool(
     title: 'Create Customer',
     description: 'Create a new customer / third party',
     inputSchema: z.object({
-      customer: z.object({
-        type: z.enum(['Customer', 'Supplier', 'Other']).optional().describe('Customer type (default: Customer)'),
-        person_type: z.enum(['Person', 'Company']).describe('Person type'),
-        id_type: z.string().describe('ID type code'),
-        identification: z.string().describe('Customer identification number'),
-        check_digit: z.string().optional().describe('Check digit (auto-calculated)'),
-        name: z.array(z.string()).describe('Customer names: [first, last] for Person, [company_name] for Company'),
-        commercial_name: z.string().optional().describe('Commercial name'),
-        branch_office: z.number().optional().describe('Branch office number'),
-        active: z.boolean().optional().describe('Active status'),
-        vat_responsible: z.boolean().optional().describe('VAT responsible'),
-        fiscal_responsibilities: z.array(z.object({ code: z.string() })).optional().describe('Fiscal responsibilities'),
-        address: z.object({
-          address: z.string().describe('Street address'),
-          city: z.object({
-            country_code: z.string().describe('Country code'),
-            state_code: z.string().describe('State/department code'),
-            city_code: z.string().describe('City code'),
-          }),
-          postal_code: z.string().optional().describe('Postal code'),
-        }).describe('Customer address'),
-        phones: z.array(z.object({
-          indicative: z.string().optional(),
-          number: z.string().describe('Phone number'),
-          extension: z.string().optional(),
-        })).describe('Phone numbers'),
-        contacts: z.array(z.object({
-          first_name: z.string().describe('Contact first name'),
-          last_name: z.string().describe('Contact last name'),
-          email: z.string().describe('Contact email'),
-          phone: z.object({
-            indicative: z.string().optional(),
-            number: z.string().optional(),
-            extension: z.string().optional(),
-          }).optional().describe('Contact phone'),
-        })).describe('Contacts (max 10)'),
-        comments: z.string().optional().describe('Comments'),
-        related_users: z.object({
-          seller_id: z.number().optional(),
-          collector_id: z.number().optional(),
-        }).optional().describe('Related users'),
-      }).describe('Customer data'),
+      customer: z
+        .object({
+          type: z.enum(['Customer', 'Supplier', 'Other']).optional().describe('Customer type (default: Customer)'),
+          person_type: z.enum(['Person', 'Company']).describe('Person type'),
+          id_type: z.string().describe('ID type code'),
+          identification: z.string().describe('Customer identification number'),
+          check_digit: z.string().optional().describe('Check digit (auto-calculated)'),
+          name: z.array(z.string()).describe('Customer names: [first, last] for Person, [company_name] for Company'),
+          commercial_name: z.string().optional().describe('Commercial name'),
+          branch_office: z.number().optional().describe('Branch office number'),
+          active: z.boolean().optional().describe('Active status'),
+          vat_responsible: z.boolean().optional().describe('VAT responsible'),
+          fiscal_responsibilities: z
+            .array(z.object({ code: z.string() }))
+            .optional()
+            .describe('Fiscal responsibilities'),
+          address: z
+            .object({
+              address: z.string().describe('Street address'),
+              city: z.object({
+                country_code: z.string().describe('Country code'),
+                state_code: z.string().describe('State/department code'),
+                city_code: z.string().describe('City code'),
+              }),
+              postal_code: z.string().optional().describe('Postal code'),
+            })
+            .describe('Customer address'),
+          phones: z
+            .array(
+              z.object({
+                indicative: z.string().optional(),
+                number: z.string().describe('Phone number'),
+                extension: z.string().optional(),
+              }),
+            )
+            .describe('Phone numbers'),
+          contacts: z
+            .array(
+              z.object({
+                first_name: z.string().describe('Contact first name'),
+                last_name: z.string().describe('Contact last name'),
+                email: z.string().describe('Contact email'),
+                phone: z
+                  .object({
+                    indicative: z.string().optional(),
+                    number: z.string().optional(),
+                    extension: z.string().optional(),
+                  })
+                  .optional()
+                  .describe('Contact phone'),
+              }),
+            )
+            .describe('Contacts (max 10)'),
+          comments: z.string().optional().describe('Comments'),
+          related_users: z
+            .object({
+              seller_id: z.number().optional(),
+              collector_id: z.number().optional(),
+            })
+            .optional()
+            .describe('Related users'),
+        })
+        .describe('Customer data'),
     }),
     annotations: { readOnlyHint: false, destructiveHint: false },
   },
   async ({ customer }) => {
     try {
       return jsonResult(await client.createCustomer(customer));
-    } catch (e) { return errorResult('siigo_create_customer', e); }
+    } catch (e) {
+      return errorResult('siigo_create_customer', e);
+    }
   },
 );
 
@@ -371,14 +439,16 @@ server.registerTool(
     description: 'Update an existing customer',
     inputSchema: z.object({
       id: z.string().describe('Customer ID'),
-      customer: z.record(z.unknown()).describe('Customer data to update (partial)'),
+      customer: z.record(z.string(), z.unknown()).describe('Customer data to update (partial)'),
     }),
     annotations: { readOnlyHint: false, destructiveHint: false },
   },
   async ({ id, customer }) => {
     try {
       return jsonResult(await client.updateCustomer(id, customer));
-    } catch (e) { return errorResult('siigo_update_customer', e); }
+    } catch (e) {
+      return errorResult('siigo_update_customer', e);
+    }
   },
 );
 
@@ -399,7 +469,9 @@ server.registerTool(
   async (args) => {
     try {
       return jsonResult(await client.searchCustomers(args));
-    } catch (e) { return errorResult('siigo_search_customers', e); }
+    } catch (e) {
+      return errorResult('siigo_search_customers', e);
+    }
   },
 );
 
@@ -423,7 +495,9 @@ server.registerTool(
   async (args) => {
     try {
       return jsonResult(await client.getInvoices(args));
-    } catch (e) { return errorResult('siigo_get_invoices', e); }
+    } catch (e) {
+      return errorResult('siigo_get_invoices', e);
+    }
   },
 );
 
@@ -440,7 +514,9 @@ server.registerTool(
   async ({ id }) => {
     try {
       return jsonResult(await client.getInvoice(id));
-    } catch (e) { return errorResult('siigo_get_invoice', e); }
+    } catch (e) {
+      return errorResult('siigo_get_invoice', e);
+    }
   },
 );
 
@@ -448,65 +524,94 @@ server.registerTool(
   'siigo_create_invoice',
   {
     title: 'Create Invoice',
-    description: 'Create a new sales invoice. Supports healthcare sector (healthcare_company) and cargo transportation (cargo_transportation) fields.',
+    description:
+      'Create a new sales invoice. Supports healthcare sector (healthcare_company) and cargo transportation (cargo_transportation) fields.',
     inputSchema: z.object({
-      invoice: z.object({
-        document: z.object({ id: z.number().describe('Document type ID') }),
-        date: z.string().describe('Invoice date (YYYY-MM-DD)'),
-        customer: z.object({
-          identification: z.string().describe('Customer identification'),
-          branch_office: z.number().optional().describe('Branch office'),
-        }).describe('Customer reference'),
-        cost_center: z.number().optional().describe('Cost center ID'),
-        currency: z.object({
-          code: z.string().describe('Currency code'),
-          exchange_rate: z.number().describe('Exchange rate'),
-        }).optional().describe('Currency (omit for local currency)'),
-        seller: z.number().describe('Seller ID'),
-        observations: z.string().optional().describe('Observations'),
-        items: z.array(z.object({
-          code: z.string().describe('Product code'),
-          description: z.string().optional(),
-          quantity: z.number().describe('Quantity'),
-          price: z.number().describe('Unit price'),
-          discount: z.number().optional().describe('Discount'),
-          taxes: z.array(z.object({ id: z.number() })).optional(),
-          warehouse: z.number().optional().describe('Warehouse ID'),
-        })).describe('Invoice items'),
-        payments: z.array(z.object({
-          id: z.number().describe('Payment type ID'),
-          value: z.number().describe('Payment value'),
-          due_date: z.string().optional().describe('Due date (YYYY-MM-DD)'),
-        })).describe('Payment methods'),
-        stamp: z.object({ send: z.boolean() }).optional().describe('Send to DIAN electronically'),
-        mail: z.object({ send: z.boolean() }).optional().describe('Send by email'),
-        retentions: z.array(z.object({ id: z.number() })).optional().describe('Retention taxes'),
-        global_discounts: z.array(z.object({
-          id: z.number(),
-          percentage: z.number().optional(),
-          value: z.number().optional(),
-        })).optional().describe('Global discounts'),
-        healthcare_company: z.object({
-          operation_type: z.enum(['SS-CUFE', 'SS-SinAporte', 'SS-Recaudo']).describe('Healthcare operation type'),
-          period_start: z.string().optional().describe('Period start date'),
-          period_end: z.string().optional().describe('Period end date'),
-          payment_method: z.number().optional().describe('Payment method (01-05)'),
-          service_plan: z.number().optional().describe('Service plan (01-15)'),
-          policy_number: z.string().optional().describe('Policy number (max 50)'),
-          contract_number: z.string().optional().describe('Contract number (max 50)'),
-          copayment: z.number().optional().describe('Copayment amount'),
-          coinsurance: z.number().optional().describe('Coinsurance amount'),
-          cost_sharing: z.number().optional().describe('Cost sharing amount'),
-          recovery_charge: z.number().optional().describe('Recovery charge amount'),
-        }).optional().describe('Healthcare sector fields (required if document type is healthcare)'),
-      }).describe('Invoice data'),
+      invoice: z
+        .object({
+          document: z.object({ id: z.number().describe('Document type ID') }),
+          date: z.string().describe('Invoice date (YYYY-MM-DD)'),
+          customer: z
+            .object({
+              identification: z.string().describe('Customer identification'),
+              branch_office: z.number().optional().describe('Branch office'),
+            })
+            .describe('Customer reference'),
+          cost_center: z.number().optional().describe('Cost center ID'),
+          currency: z
+            .object({
+              code: z.string().describe('Currency code'),
+              exchange_rate: z.number().describe('Exchange rate'),
+            })
+            .optional()
+            .describe('Currency (omit for local currency)'),
+          seller: z.number().describe('Seller ID'),
+          observations: z.string().optional().describe('Observations'),
+          items: z
+            .array(
+              z.object({
+                code: z.string().describe('Product code'),
+                description: z.string().optional(),
+                quantity: z.number().describe('Quantity'),
+                price: z.number().describe('Unit price'),
+                discount: z.number().optional().describe('Discount'),
+                taxes: z.array(z.object({ id: z.number() })).optional(),
+                warehouse: z.number().optional().describe('Warehouse ID'),
+              }),
+            )
+            .describe('Invoice items'),
+          payments: z
+            .array(
+              z.object({
+                id: z.number().describe('Payment type ID'),
+                value: z.number().describe('Payment value'),
+                due_date: z.string().optional().describe('Due date (YYYY-MM-DD)'),
+              }),
+            )
+            .describe('Payment methods'),
+          stamp: z.object({ send: z.boolean() }).optional().describe('Send to DIAN electronically'),
+          mail: z.object({ send: z.boolean() }).optional().describe('Send by email'),
+          retentions: z
+            .array(z.object({ id: z.number() }))
+            .optional()
+            .describe('Retention taxes'),
+          global_discounts: z
+            .array(
+              z.object({
+                id: z.number(),
+                percentage: z.number().optional(),
+                value: z.number().optional(),
+              }),
+            )
+            .optional()
+            .describe('Global discounts'),
+          healthcare_company: z
+            .object({
+              operation_type: z.enum(['SS-CUFE', 'SS-SinAporte', 'SS-Recaudo']).describe('Healthcare operation type'),
+              period_start: z.string().optional().describe('Period start date'),
+              period_end: z.string().optional().describe('Period end date'),
+              payment_method: z.number().optional().describe('Payment method (01-05)'),
+              service_plan: z.number().optional().describe('Service plan (01-15)'),
+              policy_number: z.string().optional().describe('Policy number (max 50)'),
+              contract_number: z.string().optional().describe('Contract number (max 50)'),
+              copayment: z.number().optional().describe('Copayment amount'),
+              coinsurance: z.number().optional().describe('Coinsurance amount'),
+              cost_sharing: z.number().optional().describe('Cost sharing amount'),
+              recovery_charge: z.number().optional().describe('Recovery charge amount'),
+            })
+            .optional()
+            .describe('Healthcare sector fields (required if document type is healthcare)'),
+        })
+        .describe('Invoice data'),
     }),
     annotations: { readOnlyHint: false, destructiveHint: false },
   },
   async ({ invoice }) => {
     try {
       return jsonResult(await client.createInvoice(invoice));
-    } catch (e) { return errorResult('siigo_create_invoice', e); }
+    } catch (e) {
+      return errorResult('siigo_create_invoice', e);
+    }
   },
 );
 
@@ -517,14 +622,16 @@ server.registerTool(
     description: 'Update an existing invoice',
     inputSchema: z.object({
       id: z.string().describe('Invoice ID'),
-      invoice: z.record(z.unknown()).describe('Invoice data to update (partial)'),
+      invoice: z.record(z.string(), z.unknown()).describe('Invoice data to update (partial)'),
     }),
     annotations: { readOnlyHint: false, destructiveHint: false },
   },
   async ({ id, invoice }) => {
     try {
       return jsonResult(await client.updateInvoice(id, invoice));
-    } catch (e) { return errorResult('siigo_update_invoice', e); }
+    } catch (e) {
+      return errorResult('siigo_update_invoice', e);
+    }
   },
 );
 
@@ -541,7 +648,9 @@ server.registerTool(
   async ({ id }) => {
     try {
       return jsonResult(await client.deleteInvoice(id));
-    } catch (e) { return errorResult('siigo_delete_invoice', e); }
+    } catch (e) {
+      return errorResult('siigo_delete_invoice', e);
+    }
   },
 );
 
@@ -558,7 +667,9 @@ server.registerTool(
   async ({ id }) => {
     try {
       return jsonResult(await client.annulInvoice(id));
-    } catch (e) { return errorResult('siigo_annul_invoice', e); }
+    } catch (e) {
+      return errorResult('siigo_annul_invoice', e);
+    }
   },
 );
 
@@ -575,7 +686,9 @@ server.registerTool(
   async ({ id }) => {
     try {
       return jsonResult(await client.getInvoicePdf(id));
-    } catch (e) { return errorResult('siigo_get_invoice_pdf', e); }
+    } catch (e) {
+      return errorResult('siigo_get_invoice_pdf', e);
+    }
   },
 );
 
@@ -592,7 +705,9 @@ server.registerTool(
   async ({ id }) => {
     try {
       return jsonResult(await client.getInvoiceXml(id));
-    } catch (e) { return errorResult('siigo_get_invoice_xml', e); }
+    } catch (e) {
+      return errorResult('siigo_get_invoice_xml', e);
+    }
   },
 );
 
@@ -609,7 +724,9 @@ server.registerTool(
   async ({ id }) => {
     try {
       return jsonResult(await client.getInvoiceStampErrors(id));
-    } catch (e) { return errorResult('siigo_get_invoice_stamp_errors', e); }
+    } catch (e) {
+      return errorResult('siigo_get_invoice_stamp_errors', e);
+    }
   },
 );
 
@@ -628,7 +745,9 @@ server.registerTool(
   async ({ id, mail_to, copy_to }) => {
     try {
       return jsonResult(await client.sendInvoiceByEmail(id, { mail_to, copy_to }));
-    } catch (e) { return errorResult('siigo_send_invoice_email', e); }
+    } catch (e) {
+      return errorResult('siigo_send_invoice_email', e);
+    }
   },
 );
 
@@ -638,43 +757,54 @@ server.registerTool(
   'siigo_create_invoice_batch',
   {
     title: 'Create Invoice Batch',
-    description: 'Create invoices in batch asynchronously. Requires a notification_url (HTTPS webhook) that will receive the results when processing completes.',
+    description:
+      'Create invoices in batch asynchronously. Requires a notification_url (HTTPS webhook) that will receive the results when processing completes.',
     inputSchema: z.object({
       notification_url: z.string().describe('HTTPS URL for webhook notification when batch completes (max 2048 chars)'),
-      invoices: z.array(z.object({
-        idempotency_key: z.string().describe('Unique external identifier (alphanumeric, max 30 chars)'),
-        document: z.object({ id: z.number() }),
-        date: z.string().describe('Date (YYYY-MM-DD)'),
-        customer: z.object({
-          identification: z.string(),
-          branch_office: z.number().optional(),
-        }),
-        cost_center: z.number().optional(),
-        seller: z.number().describe('Seller ID'),
-        items: z.array(z.object({
-          code: z.string(),
-          description: z.string().optional(),
-          quantity: z.number(),
-          price: z.number(),
-          discount: z.number().optional(),
-          taxes: z.array(z.object({ id: z.number() })).optional(),
-        })),
-        payments: z.array(z.object({
-          id: z.number(),
-          value: z.number(),
-          due_date: z.string().optional(),
-        })),
-        stamp: z.object({ send: z.boolean() }).optional(),
-        mail: z.object({ send: z.boolean() }).optional(),
-        observations: z.string().optional(),
-      })).describe('Array of invoices to create'),
+      invoices: z
+        .array(
+          z.object({
+            idempotency_key: z.string().describe('Unique external identifier (alphanumeric, max 30 chars)'),
+            document: z.object({ id: z.number() }),
+            date: z.string().describe('Date (YYYY-MM-DD)'),
+            customer: z.object({
+              identification: z.string(),
+              branch_office: z.number().optional(),
+            }),
+            cost_center: z.number().optional(),
+            seller: z.number().describe('Seller ID'),
+            items: z.array(
+              z.object({
+                code: z.string(),
+                description: z.string().optional(),
+                quantity: z.number(),
+                price: z.number(),
+                discount: z.number().optional(),
+                taxes: z.array(z.object({ id: z.number() })).optional(),
+              }),
+            ),
+            payments: z.array(
+              z.object({
+                id: z.number(),
+                value: z.number(),
+                due_date: z.string().optional(),
+              }),
+            ),
+            stamp: z.object({ send: z.boolean() }).optional(),
+            mail: z.object({ send: z.boolean() }).optional(),
+            observations: z.string().optional(),
+          }),
+        )
+        .describe('Array of invoices to create'),
     }),
     annotations: { readOnlyHint: false, destructiveHint: false },
   },
   async ({ notification_url, invoices }) => {
     try {
       return jsonResult(await client.createInvoiceBatch({ notification_url, invoices }));
-    } catch (e) { return errorResult('siigo_create_invoice_batch', e); }
+    } catch (e) {
+      return errorResult('siigo_create_invoice_batch', e);
+    }
   },
 );
 
@@ -698,7 +828,9 @@ server.registerTool(
   async (args) => {
     try {
       return jsonResult(await client.getQuotations(args));
-    } catch (e) { return errorResult('siigo_get_quotations', e); }
+    } catch (e) {
+      return errorResult('siigo_get_quotations', e);
+    }
   },
 );
 
@@ -715,7 +847,9 @@ server.registerTool(
   async ({ id }) => {
     try {
       return jsonResult(await client.getQuotation(id));
-    } catch (e) { return errorResult('siigo_get_quotation', e); }
+    } catch (e) {
+      return errorResult('siigo_get_quotation', e);
+    }
   },
 );
 
@@ -725,36 +859,51 @@ server.registerTool(
     title: 'Create Quotation',
     description: 'Create a new quotation (cotizacion). Use document type C.',
     inputSchema: z.object({
-      quotation: z.object({
-        document: z.object({ id: z.number().describe('Document type ID (type C)') }),
-        date: z.string().describe('Quotation date (YYYY-MM-DD)'),
-        customer: z.object({
-          identification: z.string().describe('Customer identification'),
-          branch_office: z.number().optional().describe('Branch office'),
-        }).describe('Customer reference'),
-        cost_center: z.number().optional().describe('Cost center ID'),
-        currency: z.object({
-          code: z.string().describe('Currency code'),
-          exchange_rate: z.number().describe('Exchange rate'),
-        }).optional().describe('Currency (omit for local currency)'),
-        seller: z.number().describe('Seller ID'),
-        observations: z.string().optional().describe('Observations'),
-        items: z.array(z.object({
-          code: z.string().describe('Product code'),
-          description: z.string().optional(),
-          quantity: z.number().describe('Quantity (max 9999999.99)'),
-          price: z.number().describe('Unit price (max 99999999999.99)'),
-          discount: z.number().optional().describe('Discount'),
-          taxes: z.array(z.object({ id: z.number() })).optional(),
-        })).describe('Quotation items'),
-      }).describe('Quotation data'),
+      quotation: z
+        .object({
+          document: z.object({
+            id: z.number().describe('Document type ID (type C)'),
+          }),
+          date: z.string().describe('Quotation date (YYYY-MM-DD)'),
+          customer: z
+            .object({
+              identification: z.string().describe('Customer identification'),
+              branch_office: z.number().optional().describe('Branch office'),
+            })
+            .describe('Customer reference'),
+          cost_center: z.number().optional().describe('Cost center ID'),
+          currency: z
+            .object({
+              code: z.string().describe('Currency code'),
+              exchange_rate: z.number().describe('Exchange rate'),
+            })
+            .optional()
+            .describe('Currency (omit for local currency)'),
+          seller: z.number().describe('Seller ID'),
+          observations: z.string().optional().describe('Observations'),
+          items: z
+            .array(
+              z.object({
+                code: z.string().describe('Product code'),
+                description: z.string().optional(),
+                quantity: z.number().describe('Quantity (max 9999999.99)'),
+                price: z.number().describe('Unit price (max 99999999999.99)'),
+                discount: z.number().optional().describe('Discount'),
+                taxes: z.array(z.object({ id: z.number() })).optional(),
+              }),
+            )
+            .describe('Quotation items'),
+        })
+        .describe('Quotation data'),
     }),
     annotations: { readOnlyHint: false, destructiveHint: false },
   },
   async ({ quotation }) => {
     try {
       return jsonResult(await client.createQuotation(quotation));
-    } catch (e) { return errorResult('siigo_create_quotation', e); }
+    } catch (e) {
+      return errorResult('siigo_create_quotation', e);
+    }
   },
 );
 
@@ -765,14 +914,16 @@ server.registerTool(
     description: 'Update an existing quotation',
     inputSchema: z.object({
       id: z.string().describe('Quotation ID'),
-      quotation: z.record(z.unknown()).describe('Quotation data to update (partial)'),
+      quotation: z.record(z.string(), z.unknown()).describe('Quotation data to update (partial)'),
     }),
     annotations: { readOnlyHint: false, destructiveHint: false },
   },
   async ({ id, quotation }) => {
     try {
       return jsonResult(await client.updateQuotation(id, quotation));
-    } catch (e) { return errorResult('siigo_update_quotation', e); }
+    } catch (e) {
+      return errorResult('siigo_update_quotation', e);
+    }
   },
 );
 
@@ -789,7 +940,9 @@ server.registerTool(
   async ({ id }) => {
     try {
       return jsonResult(await client.deleteQuotation(id));
-    } catch (e) { return errorResult('siigo_delete_quotation', e); }
+    } catch (e) {
+      return errorResult('siigo_delete_quotation', e);
+    }
   },
 );
 
@@ -811,7 +964,9 @@ server.registerTool(
   async (args) => {
     try {
       return jsonResult(await client.getCreditNotes(args));
-    } catch (e) { return errorResult('siigo_get_credit_notes', e); }
+    } catch (e) {
+      return errorResult('siigo_get_credit_notes', e);
+    }
   },
 );
 
@@ -828,7 +983,9 @@ server.registerTool(
   async ({ id }) => {
     try {
       return jsonResult(await client.getCreditNote(id));
-    } catch (e) { return errorResult('siigo_get_credit_note', e); }
+    } catch (e) {
+      return errorResult('siigo_get_credit_note', e);
+    }
   },
 );
 
@@ -836,63 +993,82 @@ server.registerTool(
   'siigo_create_credit_note',
   {
     title: 'Create Credit Note',
-    description: 'Create a new credit note. Supports healthcare sector fields via healthcare_company. Can reference an existing invoice or provide invoice_data for external invoices.',
+    description:
+      'Create a new credit note. Supports healthcare sector fields via healthcare_company. Can reference an existing invoice or provide invoice_data for external invoices.',
     inputSchema: z.object({
-      creditNote: z.object({
-        document: z.object({ id: z.number().describe('Document type ID (type NC)') }),
-        date: z.string().describe('Date (YYYY-MM-DD)'),
-        customer: z.object({
-          identification: z.string(),
-          branch_office: z.number().optional(),
-        }),
-        cost_center: z.number().optional(),
-        seller: z.number().optional().describe('Seller ID'),
-        items: z.array(z.object({
-          code: z.string(),
-          description: z.string().optional(),
-          quantity: z.number(),
-          price: z.number(),
-          discount: z.number().optional(),
-          taxes: z.array(z.object({ id: z.number() })).optional(),
-        })),
-        payments: z.array(z.object({
-          id: z.number(),
-          value: z.number(),
-          due_date: z.string().optional(),
-        })).optional(),
-        retentions: z.array(z.object({ id: z.number() })).optional(),
-        stamp: z.object({ send: z.boolean() }).optional(),
-        mail: z.object({ send: z.boolean() }).optional(),
-        observations: z.string().optional(),
-        invoice: z.string().optional().describe('Related invoice ID'),
-        invoice_data: z.object({
-          prefix: z.string().optional(),
-          number: z.number().optional(),
-          date: z.string().optional(),
-          cufe: z.string().optional(),
-        }).optional().describe('External invoice data (when invoice is not in Siigo)'),
-        reason: z.string().optional().describe('Credit note reason'),
-        healthcare_company: z.object({
-          operation_type: z.enum(['SS-CUFE', 'SS-SinAporte', 'SS-Recaudo']),
-          period_start: z.string().optional(),
-          period_end: z.string().optional(),
-          payment_method: z.number().optional(),
-          service_plan: z.number().optional(),
-          policy_number: z.string().optional(),
-          contract_number: z.string().optional(),
-          copayment: z.number().optional(),
-          coinsurance: z.number().optional(),
-          cost_sharing: z.number().optional(),
-          recovery_charge: z.number().optional(),
-        }).optional().describe('Healthcare sector fields'),
-      }).describe('Credit note data'),
+      creditNote: z
+        .object({
+          document: z.object({
+            id: z.number().describe('Document type ID (type NC)'),
+          }),
+          date: z.string().describe('Date (YYYY-MM-DD)'),
+          customer: z.object({
+            identification: z.string(),
+            branch_office: z.number().optional(),
+          }),
+          cost_center: z.number().optional(),
+          seller: z.number().optional().describe('Seller ID'),
+          items: z.array(
+            z.object({
+              code: z.string(),
+              description: z.string().optional(),
+              quantity: z.number(),
+              price: z.number(),
+              discount: z.number().optional(),
+              taxes: z.array(z.object({ id: z.number() })).optional(),
+            }),
+          ),
+          payments: z
+            .array(
+              z.object({
+                id: z.number(),
+                value: z.number(),
+                due_date: z.string().optional(),
+              }),
+            )
+            .optional(),
+          retentions: z.array(z.object({ id: z.number() })).optional(),
+          stamp: z.object({ send: z.boolean() }).optional(),
+          mail: z.object({ send: z.boolean() }).optional(),
+          observations: z.string().optional(),
+          invoice: z.string().optional().describe('Related invoice ID'),
+          invoice_data: z
+            .object({
+              prefix: z.string().optional(),
+              number: z.number().optional(),
+              date: z.string().optional(),
+              cufe: z.string().optional(),
+            })
+            .optional()
+            .describe('External invoice data (when invoice is not in Siigo)'),
+          reason: z.string().optional().describe('Credit note reason'),
+          healthcare_company: z
+            .object({
+              operation_type: z.enum(['SS-CUFE', 'SS-SinAporte', 'SS-Recaudo']),
+              period_start: z.string().optional(),
+              period_end: z.string().optional(),
+              payment_method: z.number().optional(),
+              service_plan: z.number().optional(),
+              policy_number: z.string().optional(),
+              contract_number: z.string().optional(),
+              copayment: z.number().optional(),
+              coinsurance: z.number().optional(),
+              cost_sharing: z.number().optional(),
+              recovery_charge: z.number().optional(),
+            })
+            .optional()
+            .describe('Healthcare sector fields'),
+        })
+        .describe('Credit note data'),
     }),
     annotations: { readOnlyHint: false, destructiveHint: false },
   },
   async ({ creditNote }) => {
     try {
       return jsonResult(await client.createCreditNote(creditNote));
-    } catch (e) { return errorResult('siigo_create_credit_note', e); }
+    } catch (e) {
+      return errorResult('siigo_create_credit_note', e);
+    }
   },
 );
 
@@ -909,7 +1085,9 @@ server.registerTool(
   async ({ id }) => {
     try {
       return jsonResult(await client.getCreditNotePdf(id));
-    } catch (e) { return errorResult('siigo_get_credit_note_pdf', e); }
+    } catch (e) {
+      return errorResult('siigo_get_credit_note_pdf', e);
+    }
   },
 );
 
@@ -931,7 +1109,9 @@ server.registerTool(
   async (args) => {
     try {
       return jsonResult(await client.getVouchers(args));
-    } catch (e) { return errorResult('siigo_get_vouchers', e); }
+    } catch (e) {
+      return errorResult('siigo_get_vouchers', e);
+    }
   },
 );
 
@@ -948,7 +1128,9 @@ server.registerTool(
   async ({ id }) => {
     try {
       return jsonResult(await client.getVoucher(id));
-    } catch (e) { return errorResult('siigo_get_voucher', e); }
+    } catch (e) {
+      return errorResult('siigo_get_voucher', e);
+    }
   },
 );
 
@@ -958,34 +1140,46 @@ server.registerTool(
     title: 'Create Voucher',
     description: 'Create a new voucher / cash receipt (recibo de caja). Supports DebtPayment, AdvancePayment, and Advanced types.',
     inputSchema: z.object({
-      voucher: z.object({
-        document: z.object({ id: z.number().describe('Document type ID (type RC)') }),
-        date: z.string().describe('Date (YYYY-MM-DD)'),
-        type: z.enum(['DebtPayment', 'AdvancePayment', 'Advanced']).describe('Voucher type'),
-        customer: z.object({
-          identification: z.string(),
-          branch_office: z.number().optional(),
-        }),
-        cost_center: z.number().optional(),
-        currency: z.object({
-          code: z.string(),
-          exchange_rate: z.number(),
-        }).optional(),
-        items: z.array(z.record(z.unknown())).describe('Voucher items (structure varies by type)'),
-        payments: z.array(z.object({
-          id: z.number(),
-          value: z.number(),
-          due_date: z.string().optional(),
-        })).optional(),
-        observations: z.string().optional(),
-      }).describe('Voucher data'),
+      voucher: z
+        .object({
+          document: z.object({
+            id: z.number().describe('Document type ID (type RC)'),
+          }),
+          date: z.string().describe('Date (YYYY-MM-DD)'),
+          type: z.enum(['DebtPayment', 'AdvancePayment', 'Advanced']).describe('Voucher type'),
+          customer: z.object({
+            identification: z.string(),
+            branch_office: z.number().optional(),
+          }),
+          cost_center: z.number().optional(),
+          currency: z
+            .object({
+              code: z.string(),
+              exchange_rate: z.number(),
+            })
+            .optional(),
+          items: z.array(z.record(z.string(), z.unknown())).describe('Voucher items (structure varies by type)'),
+          payments: z
+            .array(
+              z.object({
+                id: z.number(),
+                value: z.number(),
+                due_date: z.string().optional(),
+              }),
+            )
+            .optional(),
+          observations: z.string().optional(),
+        })
+        .describe('Voucher data'),
     }),
     annotations: { readOnlyHint: false, destructiveHint: false },
   },
   async ({ voucher }) => {
     try {
       return jsonResult(await client.createVoucher(voucher));
-    } catch (e) { return errorResult('siigo_create_voucher', e); }
+    } catch (e) {
+      return errorResult('siigo_create_voucher', e);
+    }
   },
 );
 
@@ -1007,7 +1201,9 @@ server.registerTool(
   async (args) => {
     try {
       return jsonResult(await client.getPurchases(args));
-    } catch (e) { return errorResult('siigo_get_purchases', e); }
+    } catch (e) {
+      return errorResult('siigo_get_purchases', e);
+    }
   },
 );
 
@@ -1024,7 +1220,9 @@ server.registerTool(
   async ({ id }) => {
     try {
       return jsonResult(await client.getPurchase(id));
-    } catch (e) { return errorResult('siigo_get_purchase', e); }
+    } catch (e) {
+      return errorResult('siigo_get_purchase', e);
+    }
   },
 );
 
@@ -1032,16 +1230,19 @@ server.registerTool(
   'siigo_create_purchase',
   {
     title: 'Create Purchase',
-    description: 'Create a new purchase invoice (factura de compra). Use document type FC. If the document type has document_support=true, it creates a Documento Soporte.',
+    description:
+      'Create a new purchase invoice (factura de compra). Use document type FC. If the document type has document_support=true, it creates a Documento Soporte.',
     inputSchema: z.object({
-      purchase: z.record(z.unknown()).describe('Purchase data'),
+      purchase: z.record(z.string(), z.unknown()).describe('Purchase data'),
     }),
     annotations: { readOnlyHint: false, destructiveHint: false },
   },
   async ({ purchase }) => {
     try {
       return jsonResult(await client.createPurchase(purchase));
-    } catch (e) { return errorResult('siigo_create_purchase', e); }
+    } catch (e) {
+      return errorResult('siigo_create_purchase', e);
+    }
   },
 );
 
@@ -1052,14 +1253,16 @@ server.registerTool(
     description: 'Update an existing purchase invoice',
     inputSchema: z.object({
       id: z.string().describe('Purchase ID'),
-      purchase: z.record(z.unknown()).describe('Purchase data to update (partial)'),
+      purchase: z.record(z.string(), z.unknown()).describe('Purchase data to update (partial)'),
     }),
     annotations: { readOnlyHint: false, destructiveHint: false },
   },
   async ({ id, purchase }) => {
     try {
       return jsonResult(await client.updatePurchase(id, purchase));
-    } catch (e) { return errorResult('siigo_update_purchase', e); }
+    } catch (e) {
+      return errorResult('siigo_update_purchase', e);
+    }
   },
 );
 
@@ -1076,7 +1279,9 @@ server.registerTool(
   async ({ id }) => {
     try {
       return jsonResult(await client.deletePurchase(id));
-    } catch (e) { return errorResult('siigo_delete_purchase', e); }
+    } catch (e) {
+      return errorResult('siigo_delete_purchase', e);
+    }
   },
 );
 
@@ -1098,7 +1303,9 @@ server.registerTool(
   async (args) => {
     try {
       return jsonResult(await client.getPaymentReceipts(args));
-    } catch (e) { return errorResult('siigo_get_payment_receipts', e); }
+    } catch (e) {
+      return errorResult('siigo_get_payment_receipts', e);
+    }
   },
 );
 
@@ -1115,7 +1322,9 @@ server.registerTool(
   async ({ id }) => {
     try {
       return jsonResult(await client.getPaymentReceipt(id));
-    } catch (e) { return errorResult('siigo_get_payment_receipt', e); }
+    } catch (e) {
+      return errorResult('siigo_get_payment_receipt', e);
+    }
   },
 );
 
@@ -1123,36 +1332,49 @@ server.registerTool(
   'siigo_create_payment_receipt',
   {
     title: 'Create Payment Receipt',
-    description: 'Create a new payment receipt / disbursement (recibo de pago / comprobante de egreso). Supports DebtPayment, AdvancePayment, and Advanced types.',
+    description:
+      'Create a new payment receipt / disbursement (recibo de pago / comprobante de egreso). Supports DebtPayment, AdvancePayment, and Advanced types.',
     inputSchema: z.object({
-      paymentReceipt: z.object({
-        document: z.object({ id: z.number().describe('Document type ID (type RP)') }),
-        date: z.string().describe('Date (YYYY-MM-DD)'),
-        type: z.enum(['DebtPayment', 'AdvancePayment', 'Advanced']).describe('Receipt type'),
-        customer: z.object({
-          identification: z.string(),
-          branch_office: z.number().optional(),
-        }),
-        cost_center: z.number().optional(),
-        currency: z.object({
-          code: z.string(),
-          exchange_rate: z.number(),
-        }).optional(),
-        items: z.array(z.record(z.unknown())).describe('Receipt items (structure varies by type)'),
-        payments: z.array(z.object({
-          id: z.number(),
-          value: z.number(),
-          due_date: z.string().optional(),
-        })).optional(),
-        observations: z.string().optional(),
-      }).describe('Payment receipt data'),
+      paymentReceipt: z
+        .object({
+          document: z.object({
+            id: z.number().describe('Document type ID (type RP)'),
+          }),
+          date: z.string().describe('Date (YYYY-MM-DD)'),
+          type: z.enum(['DebtPayment', 'AdvancePayment', 'Advanced']).describe('Receipt type'),
+          customer: z.object({
+            identification: z.string(),
+            branch_office: z.number().optional(),
+          }),
+          cost_center: z.number().optional(),
+          currency: z
+            .object({
+              code: z.string(),
+              exchange_rate: z.number(),
+            })
+            .optional(),
+          items: z.array(z.record(z.string(), z.unknown())).describe('Receipt items (structure varies by type)'),
+          payments: z
+            .array(
+              z.object({
+                id: z.number(),
+                value: z.number(),
+                due_date: z.string().optional(),
+              }),
+            )
+            .optional(),
+          observations: z.string().optional(),
+        })
+        .describe('Payment receipt data'),
     }),
     annotations: { readOnlyHint: false, destructiveHint: false },
   },
   async ({ paymentReceipt }) => {
     try {
       return jsonResult(await client.createPaymentReceipt(paymentReceipt));
-    } catch (e) { return errorResult('siigo_create_payment_receipt', e); }
+    } catch (e) {
+      return errorResult('siigo_create_payment_receipt', e);
+    }
   },
 );
 
@@ -1163,14 +1385,16 @@ server.registerTool(
     description: 'Update an existing payment receipt',
     inputSchema: z.object({
       id: z.string().describe('Payment receipt ID'),
-      paymentReceipt: z.record(z.unknown()).describe('Payment receipt data to update (partial)'),
+      paymentReceipt: z.record(z.string(), z.unknown()).describe('Payment receipt data to update (partial)'),
     }),
     annotations: { readOnlyHint: false, destructiveHint: false },
   },
   async ({ id, paymentReceipt }) => {
     try {
       return jsonResult(await client.updatePaymentReceipt(id, paymentReceipt));
-    } catch (e) { return errorResult('siigo_update_payment_receipt', e); }
+    } catch (e) {
+      return errorResult('siigo_update_payment_receipt', e);
+    }
   },
 );
 
@@ -1187,7 +1411,9 @@ server.registerTool(
   async ({ id }) => {
     try {
       return jsonResult(await client.deletePaymentReceipt(id));
-    } catch (e) { return errorResult('siigo_delete_payment_receipt', e); }
+    } catch (e) {
+      return errorResult('siigo_delete_payment_receipt', e);
+    }
   },
 );
 
@@ -1209,7 +1435,9 @@ server.registerTool(
   async (args) => {
     try {
       return jsonResult(await client.getJournals(args));
-    } catch (e) { return errorResult('siigo_get_journals', e); }
+    } catch (e) {
+      return errorResult('siigo_get_journals', e);
+    }
   },
 );
 
@@ -1226,7 +1454,9 @@ server.registerTool(
   async ({ id }) => {
     try {
       return jsonResult(await client.getJournal(id));
-    } catch (e) { return errorResult('siigo_get_journal', e); }
+    } catch (e) {
+      return errorResult('siigo_get_journal', e);
+    }
   },
 );
 
@@ -1236,31 +1466,44 @@ server.registerTool(
     title: 'Create Journal',
     description: 'Create a new accounting journal entry (comprobante contable)',
     inputSchema: z.object({
-      journal: z.object({
-        document: z.object({ id: z.number().describe('Document type ID (type CC)') }),
-        date: z.string().describe('Date (YYYY-MM-DD)'),
-        items: z.array(z.object({
-          account: z.object({
-            code: z.string().describe('Account code'),
-            movement: z.enum(['Debit', 'Credit']).describe('Movement type'),
+      journal: z
+        .object({
+          document: z.object({
+            id: z.number().describe('Document type ID (type CC)'),
           }),
-          customer: z.object({
-            identification: z.string(),
-            branch_office: z.number().optional(),
-          }).optional().describe('Third party reference'),
-          description: z.string().optional(),
-          value: z.number().describe('Value'),
-          cost_center: z.number().optional(),
-        })).describe('Journal items (debits must equal credits)'),
-        observations: z.string().optional(),
-      }).describe('Journal data'),
+          date: z.string().describe('Date (YYYY-MM-DD)'),
+          items: z
+            .array(
+              z.object({
+                account: z.object({
+                  code: z.string().describe('Account code'),
+                  movement: z.enum(['Debit', 'Credit']).describe('Movement type'),
+                }),
+                customer: z
+                  .object({
+                    identification: z.string(),
+                    branch_office: z.number().optional(),
+                  })
+                  .optional()
+                  .describe('Third party reference'),
+                description: z.string().optional(),
+                value: z.number().describe('Value'),
+                cost_center: z.number().optional(),
+              }),
+            )
+            .describe('Journal items (debits must equal credits)'),
+          observations: z.string().optional(),
+        })
+        .describe('Journal data'),
     }),
     annotations: { readOnlyHint: false, destructiveHint: false },
   },
   async ({ journal }) => {
     try {
       return jsonResult(await client.createJournal(journal));
-    } catch (e) { return errorResult('siigo_create_journal', e); }
+    } catch (e) {
+      return errorResult('siigo_create_journal', e);
+    }
   },
 );
 
@@ -1279,7 +1522,9 @@ server.registerTool(
   async () => {
     try {
       return jsonResult(await client.getWebhooks());
-    } catch (e) { return errorResult('siigo_get_webhooks', e); }
+    } catch (e) {
+      return errorResult('siigo_get_webhooks', e);
+    }
   },
 );
 
@@ -1298,7 +1543,9 @@ server.registerTool(
   async (args) => {
     try {
       return jsonResult(await client.createWebhook(args));
-    } catch (e) { return errorResult('siigo_create_webhook', e); }
+    } catch (e) {
+      return errorResult('siigo_create_webhook', e);
+    }
   },
 );
 
@@ -1319,7 +1566,9 @@ server.registerTool(
   async ({ id, ...webhook }) => {
     try {
       return jsonResult(await client.updateWebhook(id, webhook));
-    } catch (e) { return errorResult('siigo_update_webhook', e); }
+    } catch (e) {
+      return errorResult('siigo_update_webhook', e);
+    }
   },
 );
 
@@ -1336,7 +1585,9 @@ server.registerTool(
   async ({ id }) => {
     try {
       return jsonResult(await client.deleteWebhook(id));
-    } catch (e) { return errorResult('siigo_delete_webhook', e); }
+    } catch (e) {
+      return errorResult('siigo_delete_webhook', e);
+    }
   },
 );
 
@@ -1348,7 +1599,8 @@ server.registerTool(
   'siigo_get_document_types',
   {
     title: 'Get Document Types',
-    description: 'Get document types catalog. Filter by type: FV (sales invoice), RC (cash receipt), NC (credit note), FC (purchase invoice), CC (journal), RP (payment receipt), C (quotation).',
+    description:
+      'Get document types catalog. Filter by type: FV (sales invoice), RC (cash receipt), NC (credit note), FC (purchase invoice), CC (journal), RP (payment receipt), C (quotation).',
     inputSchema: z.object({
       type: z.enum(['FV', 'RC', 'NC', 'FC', 'CC', 'RP', 'C']).optional().describe('Document type filter'),
     }),
@@ -1357,7 +1609,9 @@ server.registerTool(
   async ({ type }) => {
     try {
       return jsonResult(await client.getDocumentTypes(type));
-    } catch (e) { return errorResult('siigo_get_document_types', e); }
+    } catch (e) {
+      return errorResult('siigo_get_document_types', e);
+    }
   },
 );
 
@@ -1372,7 +1626,9 @@ server.registerTool(
   async () => {
     try {
       return jsonResult(await client.getTaxes());
-    } catch (e) { return errorResult('siigo_get_taxes', e); }
+    } catch (e) {
+      return errorResult('siigo_get_taxes', e);
+    }
   },
 );
 
@@ -1389,7 +1645,9 @@ server.registerTool(
   async ({ document_type }) => {
     try {
       return jsonResult(await client.getPaymentTypes(document_type));
-    } catch (e) { return errorResult('siigo_get_payment_types', e); }
+    } catch (e) {
+      return errorResult('siigo_get_payment_types', e);
+    }
   },
 );
 
@@ -1404,7 +1662,9 @@ server.registerTool(
   async () => {
     try {
       return jsonResult(await client.getCostCenters());
-    } catch (e) { return errorResult('siigo_get_cost_centers', e); }
+    } catch (e) {
+      return errorResult('siigo_get_cost_centers', e);
+    }
   },
 );
 
@@ -1419,7 +1679,9 @@ server.registerTool(
   async () => {
     try {
       return jsonResult(await client.getUsers());
-    } catch (e) { return errorResult('siigo_get_users', e); }
+    } catch (e) {
+      return errorResult('siigo_get_users', e);
+    }
   },
 );
 
@@ -1434,7 +1696,9 @@ server.registerTool(
   async () => {
     try {
       return jsonResult(await client.getWarehouses());
-    } catch (e) { return errorResult('siigo_get_warehouses', e); }
+    } catch (e) {
+      return errorResult('siigo_get_warehouses', e);
+    }
   },
 );
 
@@ -1449,7 +1713,9 @@ server.registerTool(
   async () => {
     try {
       return jsonResult(await client.getPriceLists());
-    } catch (e) { return errorResult('siigo_get_price_lists', e); }
+    } catch (e) {
+      return errorResult('siigo_get_price_lists', e);
+    }
   },
 );
 
@@ -1464,7 +1730,9 @@ server.registerTool(
   async () => {
     try {
       return jsonResult(await client.getCities());
-    } catch (e) { return errorResult('siigo_get_cities', e); }
+    } catch (e) {
+      return errorResult('siigo_get_cities', e);
+    }
   },
 );
 
@@ -1479,7 +1747,9 @@ server.registerTool(
   async () => {
     try {
       return jsonResult(await client.getIdTypes());
-    } catch (e) { return errorResult('siigo_get_id_types', e); }
+    } catch (e) {
+      return errorResult('siigo_get_id_types', e);
+    }
   },
 );
 
@@ -1494,7 +1764,9 @@ server.registerTool(
   async () => {
     try {
       return jsonResult(await client.getFiscalResponsibilities());
-    } catch (e) { return errorResult('siigo_get_fiscal_responsibilities', e); }
+    } catch (e) {
+      return errorResult('siigo_get_fiscal_responsibilities', e);
+    }
   },
 );
 
@@ -1509,7 +1781,9 @@ server.registerTool(
   async () => {
     try {
       return jsonResult(await client.getFixedAssets());
-    } catch (e) { return errorResult('siigo_get_fixed_assets', e); }
+    } catch (e) {
+      return errorResult('siigo_get_fixed_assets', e);
+    }
   },
 );
 
@@ -1535,7 +1809,9 @@ server.registerTool(
   async (args) => {
     try {
       return jsonResult(await client.getTrialBalance(args));
-    } catch (e) { return errorResult('siigo_get_trial_balance', e); }
+    } catch (e) {
+      return errorResult('siigo_get_trial_balance', e);
+    }
   },
 );
 
@@ -1551,17 +1827,22 @@ server.registerTool(
       month_start: z.number().describe('Starting month (1-13)'),
       month_end: z.number().describe('Ending month (1-13)'),
       includes_tax_difference: z.boolean().describe('Include tax differences'),
-      customer: z.object({
-        identification: z.string(),
-        branch_office: z.number().optional(),
-      }).optional().describe('Customer filter'),
+      customer: z
+        .object({
+          identification: z.string(),
+          branch_office: z.number().optional(),
+        })
+        .optional()
+        .describe('Customer filter'),
     }),
     annotations: { readOnlyHint: true, destructiveHint: false },
   },
   async (args) => {
     try {
       return jsonResult(await client.getTrialBalanceByThird(args));
-    } catch (e) { return errorResult('siigo_get_trial_balance_by_third', e); }
+    } catch (e) {
+      return errorResult('siigo_get_trial_balance_by_third', e);
+    }
   },
 );
 
@@ -1579,7 +1860,9 @@ server.registerTool(
   async (args) => {
     try {
       return jsonResult(await client.getAccountsPayable(args));
-    } catch (e) { return errorResult('siigo_get_accounts_payable', e); }
+    } catch (e) {
+      return errorResult('siigo_get_accounts_payable', e);
+    }
   },
 );
 

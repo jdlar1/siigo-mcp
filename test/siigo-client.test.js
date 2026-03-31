@@ -29,7 +29,12 @@ describe('SiigoClient', () => {
 
   test('throws SiigoApiError when the API returns an error payload', async () => {
     mockAxiosInstance.post.mockResolvedValue({
-      data: { access_token: 'token', expires_in: 3600, token_type: 'Bearer', scope: '*' },
+      data: {
+        access_token: 'token',
+        expires_in: 3600,
+        token_type: 'Bearer',
+        scope: '*',
+      },
     });
     mockAxiosInstance.request.mockRejectedValue({
       isAxiosError: true,
@@ -69,7 +74,12 @@ describe('SiigoClient', () => {
 
   test('uses the webhook id in the update endpoint path', async () => {
     mockAxiosInstance.post.mockResolvedValue({
-      data: { access_token: 'token', expires_in: 3600, token_type: 'Bearer', scope: '*' },
+      data: {
+        access_token: 'token',
+        expires_in: 3600,
+        token_type: 'Bearer',
+        scope: '*',
+      },
     });
     mockAxiosInstance.request.mockResolvedValue({
       data: { data: { id: 'wh_123', active: false } },
@@ -95,7 +105,12 @@ describe('SiigoClient', () => {
 
   test('searchProducts scans later pages before filtering partial matches', async () => {
     mockAxiosInstance.post.mockResolvedValue({
-      data: { access_token: 'token', expires_in: 3600, token_type: 'Bearer', scope: '*' },
+      data: {
+        access_token: 'token',
+        expires_in: 3600,
+        token_type: 'Bearer',
+        scope: '*',
+      },
     });
     mockAxiosInstance.request
       .mockResolvedValueOnce({
@@ -124,20 +139,35 @@ describe('SiigoClient', () => {
     const response = await client.searchProducts({ name: 'gamm' });
 
     expect(response.results).toEqual([{ code: 'G1', name: 'Gamma' }]);
-    expect(response.pagination).toEqual({ page: 1, page_size: 1, total_results: 1 });
+    expect(response.pagination).toEqual({
+      page: 1,
+      page_size: 1,
+      total_results: 1,
+    });
     expect(mockAxiosInstance.request).toHaveBeenNthCalledWith(
       1,
-      expect.objectContaining({ params: { page: 1, page_size: 100 }, url: '/v1/products' }),
+      expect.objectContaining({
+        params: { page: 1, page_size: 100 },
+        url: '/v1/products',
+      }),
     );
     expect(mockAxiosInstance.request).toHaveBeenNthCalledWith(
       2,
-      expect.objectContaining({ params: { page: 2, page_size: 2 }, url: '/v1/products' }),
+      expect.objectContaining({
+        params: { page: 2, page_size: 2 },
+        url: '/v1/products',
+      }),
     );
   });
 
   test('searchCustomers scans later pages before filtering partial matches', async () => {
     mockAxiosInstance.post.mockResolvedValue({
-      data: { access_token: 'token', expires_in: 3600, token_type: 'Bearer', scope: '*' },
+      data: {
+        access_token: 'token',
+        expires_in: 3600,
+        token_type: 'Bearer',
+        scope: '*',
+      },
     });
     mockAxiosInstance.request
       .mockResolvedValueOnce({
@@ -163,17 +193,30 @@ describe('SiigoClient', () => {
       partnerId: 'partner',
     });
 
-    const response = await client.searchCustomers({ name: 'gomez', type: 'Customer' });
+    const response = await client.searchCustomers({
+      name: 'gomez',
+      type: 'Customer',
+    });
 
     expect(response.results).toEqual([{ identification: '3', name: ['Carlos Gomez'] }]);
-    expect(response.pagination).toEqual({ page: 1, page_size: 1, total_results: 1 });
+    expect(response.pagination).toEqual({
+      page: 1,
+      page_size: 1,
+      total_results: 1,
+    });
     expect(mockAxiosInstance.request).toHaveBeenNthCalledWith(
       1,
-      expect.objectContaining({ params: { page: 1, page_size: 100, type: 'Customer' }, url: '/v1/customers' }),
+      expect.objectContaining({
+        params: { page: 1, page_size: 100, type: 'Customer' },
+        url: '/v1/customers',
+      }),
     );
     expect(mockAxiosInstance.request).toHaveBeenNthCalledWith(
       2,
-      expect.objectContaining({ params: { page: 2, page_size: 2, type: 'Customer' }, url: '/v1/customers' }),
+      expect.objectContaining({
+        params: { page: 2, page_size: 2, type: 'Customer' },
+        url: '/v1/customers',
+      }),
     );
   });
 });
