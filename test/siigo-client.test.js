@@ -219,4 +219,136 @@ describe('SiigoClient', () => {
       }),
     );
   });
+
+  test('creates purchase support documents through the documented endpoint', async () => {
+    mockAxiosInstance.post.mockResolvedValue({
+      data: {
+        access_token: 'token',
+        expires_in: 3600,
+        token_type: 'Bearer',
+        scope: '*',
+      },
+    });
+    mockAxiosInstance.request.mockResolvedValue({
+      data: { data: { id: 'psd_123' } },
+    });
+
+    const client = new SiigoClient({
+      username: 'user',
+      accessKey: 'key',
+      baseUrl: 'https://api.siigo.com',
+      partnerId: 'partner',
+    });
+
+    await client.createPurchaseSupportDocument({ document: { id: 2446 }, date: '2026-02-15' });
+
+    expect(mockAxiosInstance.request).toHaveBeenCalledWith(
+      expect.objectContaining({
+        method: 'POST',
+        url: '/v1/purchase-support-documents',
+        data: { document: { id: 2446 }, date: '2026-02-15' },
+      }),
+    );
+  });
+
+  test('updates purchase support documents by id', async () => {
+    mockAxiosInstance.post.mockResolvedValue({
+      data: {
+        access_token: 'token',
+        expires_in: 3600,
+        token_type: 'Bearer',
+        scope: '*',
+      },
+    });
+    mockAxiosInstance.request.mockResolvedValue({
+      data: { data: { id: 'psd_123' } },
+    });
+
+    const client = new SiigoClient({
+      username: 'user',
+      accessKey: 'key',
+      baseUrl: 'https://api.siigo.com',
+      partnerId: 'partner',
+    });
+
+    await client.updatePurchaseSupportDocument('psd_123', { observations: 'updated' });
+
+    expect(mockAxiosInstance.request).toHaveBeenCalledWith(
+      expect.objectContaining({
+        method: 'PUT',
+        url: '/v1/purchase-support-documents/psd_123',
+        data: { observations: 'updated' },
+      }),
+    );
+  });
+
+  test('requests DS document types', async () => {
+    mockAxiosInstance.post.mockResolvedValue({
+      data: {
+        access_token: 'token',
+        expires_in: 3600,
+        token_type: 'Bearer',
+        scope: '*',
+      },
+    });
+    mockAxiosInstance.request.mockResolvedValue({
+      data: { results: [] },
+    });
+
+    const client = new SiigoClient({
+      username: 'user',
+      accessKey: 'key',
+      baseUrl: 'https://api.siigo.com',
+      partnerId: 'partner',
+    });
+
+    await client.getDocumentTypes('DS');
+
+    expect(mockAxiosInstance.request).toHaveBeenCalledWith(
+      expect.objectContaining({
+        method: 'GET',
+        url: '/v1/document-types',
+        params: { type: 'DS' },
+      }),
+    );
+  });
+
+  test('requests receipt adjustment catalogs', async () => {
+    mockAxiosInstance.post.mockResolvedValue({
+      data: {
+        access_token: 'token',
+        expires_in: 3600,
+        token_type: 'Bearer',
+        scope: '*',
+      },
+    });
+    mockAxiosInstance.request.mockResolvedValue({
+      data: { results: [] },
+    });
+
+    const client = new SiigoClient({
+      username: 'user',
+      accessKey: 'key',
+      baseUrl: 'https://api.siigo.com',
+      partnerId: 'partner',
+    });
+
+    await client.getExpenses();
+    await client.getMiscIncome();
+
+    expect(mockAxiosInstance.request).toHaveBeenNthCalledWith(
+      1,
+      expect.objectContaining({
+        method: 'GET',
+        url: '/v1/expenses',
+      }),
+    );
+    expect(mockAxiosInstance.request).toHaveBeenNthCalledWith(
+      2,
+      expect.objectContaining({
+        method: 'GET',
+        url: '/v1/misc-income',
+      }),
+    );
+  });
 });

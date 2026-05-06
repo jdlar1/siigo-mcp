@@ -18,9 +18,30 @@ Tendrás acceso a los siguientes recursos:
 | Recibos de pago/egreso    | /payment-receipts      | Crear , editar, eliminar y consultar uno o todos los recibos de pago/egreso.|
 | Comprobantes contables    | /journals              | Crear y consultar una o todos los Comprobantes Contables|
 | Reportes financieros y contables | El endpoint depende del reporte  | Consultar reportes de balance de prueba, balance de prueba por tercero y reporte cuentas por pagar.|
+| Documento soporte         | /purchase-support-documents | Crear, editar, eliminar, consultar los documentos soporte. |
 
 
 # Novedades
+
+## Ajustes en los recibos de caja
+
+Debido a ajustes realizados en Siigo Nube en los recibos de caja, se ajustaron los request de los recibos de caja en Siigo API. 
+Entre los ajustes encontraras las siguientes novedades: 
+
+ 1- Se elimina el tipo de recibo de caja avanzado (Detailed)
+ 2- En el recibo de caja de abono a una deuda se incluyen impuestos y descuentos aplicados al vencimiento para realizar ajustes al saldo. Estos descuentos se pueden consultar en el nuevo endpoint  de /expenses
+ 3- Se agrega un nuevo tipo de recibo de caja para otros ingresos llamado MiscIncome para relacionar ingresos de otros conceptos, estos conceptos se crean desde Siigo Nube y se pueden consultar en el nuevo endpoint de /misc-income
+
+
+Encuentra mayor información de las peticiones en la sección <a href="https://siigoapi.docs.apiary.io/#reference/recibos-de-caja">**Recibo de caja**</a>.
+
+
+## Nuevo documento: Documento soporte
+
+Ahora podrás crear, editar, consultar o borrar documentos soportes en Siigo API.
+
+Encuentra mayor información en nuestra sección <a href="https://siigoapi.docs.apiary.io/#reference/documento-soporte-o-gasto">**Documento soporte**</a>.
+
 
 ## Nuevo documento: Cotización
 
@@ -290,6 +311,8 @@ El `id` del tipo de comprobante no corresponde al que estás creando. <a href="h
 En Nota Crédito, debes verificar que `invoice` sea del mismo `electronic_type`.
 Si se está usando un tipo de comprobante con marcación `electronica` en su definición, esta debe estar `enviada` ante la DIAN si se desea aplicar nota crédito. 
 
+## `invalid_dian_resolution`
+La resolución electrónica del documento ha superado el rango de fecha y/o número de consecutivo. Por favor, cambia de tipo de documento o realiza el ajuste pertinente en Siigo Nube.
 
 ## `invalid_email` 
 La dirección de correo electrónico no es válida, 
@@ -1196,6 +1219,76 @@ Puedes enviar a la DIAN y por mail tus facturas de venta desde su creación en S
 + taxes (array[TaxIn]) - Impuestos que se desean asociar al producto o servicio.
 + transport (FieldsTransport) - Campos para empresas de transporte
 
+## ItemIn (object)
++ code: ``Item-1`` (string,required) - Código único del producto.
++ description: Camiseta de algodón (string) - Nombre o descripción del producto/servicio.
++ quantity: 1 (number,required) - Cantidad.
++ price: 1069.77 (number,required) - Precio del producto / Valor unitario.
++ discount: ``0.0`` (number) - Porcentaje o Valor de descuento. Según configuración de la factura.
++ taxes (array[TaxIn]) - Impuestos que se desean asociar al producto o servicio.
++ transport (FieldsTransport) - Campos para empresas de transporte
+
+# DocumentDS (object)
++ id: 2446 (number,required) - Identificador del comprobante *https://api.siigo.com/v1/document-types?type=DS*
+
+## ElectronicTypeDS (enum)
++ `Physical` - Documento soporte Físico
++ `Electronic` - Documento soporte electrónico
+
+## SupplierReceiptNumber (object)
++ prefix: DS (string,required) - Prefijo del documento soporte del proveedor.
++ number: 1234 (string,required) - Consecutivo del documento soporte del proveedor.
+
+## DocumentTypeDS (object)
++ id: 2446 (number) - Identificador único del comprobante.
++ code: 12 (string) - Código del comprobante.
++ name: Documento soporte (string) - Nombre o título del comprobante.
++ description: Documento sopote (string) - Descripción del comprobante.
++ `type` (DS) - Tipo de comprobante.
++ active: true (boolean) -  Estado del comprobante.
++ `electronic_type` (ElectronicTypeDS) - Indica si el documento soporte es físico o electrónico.
++ cost_center: false (boolean) - Maneja centro de costos.
++ cost_center_mandatory: false (boolean) - El centro de costos es obligatorio.
++ cost_center_default: 245 (number) - Indica el número de ID del centro de costos.
++ automatic_number: true (boolean) - Maneja numeración automática.
++ consecutive: 3 (number) - Consecutivo.
++ decimals: true (boolean) - Maneja decimales.
++ reteiva: true (boolean) - Maneja reteIVA.
++ reteica: true (boolean) - Maneja reteICA.
+
+## DocumentSoportIn (object)
++ document (DocumentDS,required) - Tipo de Comprobante (Para verificar la configuración ir a Siigo Nube en el menú Configuración > Compras y gastos > Documentos > Documento soporte
++ date: ``2026-02-15`` (string,required) - Fecha del documento, formato yyyy-MM-dd.
++ supplier (CustomerInInvoiceS,required) - Identificador del proveedor que emite el documento soporte.
++ cost_center: 235 (number) - Centro de costo, el campo es obligatorio según la configuración del comprobante.
++ supplier_receipt_number (SupplierReceiptNumber) -  Datos del documento soporte del proveedor.
++ currency (Currency) - Código de Moneda Extranjera
++ observations: Observaciones (string) - Comentarios para agregar información del documento soporte.
++ discount_type: Value (string) - Descuento por valor "Value" o porcentaje "percentage".
++ stamp (StampInDian) - Campo para indicar el envío electrónico del documento soporte
++ items (array[ItemInFC],required) - Productos o Servicios, activos fijos co cuentras contables asociadas al documento soporte.
++ payments (array[PaymentIn],required) - Formas de pago asociadas a la factura.
+
+## DocumentSoportOut (object)
++ id: ``63f918c2-ca65-4edc-a7db-66bcdd5159fb`` (string) - Identificador del documento soporte.
++ document (DocumentDS) - Tipo de Comprobante (Para verificar la configuración ir a Siigo Nube en el menú Configuración > Transacciones > Comprobantes) factura.
++ number: 2732 (number) - Consecutivo/número del comprobante, el campo es obligatorio según la configuración del tipo de comprobante.
++ name: "DS-2-22" (string) - Tipo de Comprobante + Código de Comprobante + Número de Comprobante.
++ date: ``2026-02-15`` (string) - Fecha del documento, formato yyyy-MM-dd.
++ supplier (CustomerInInvoiceS,required) - Identificador del proveedor que emite la compra.
++ cost_center: 235 (number) - Centro de costo.
++ supplier_receipt_number (SupplierReceiptNumber) -  Datos del documento soporte del proveedor.
++ discount_type: Value (string) -Tipo de descuento valor "Value" o porcentaje "percentage".
++ currency (Currency) - Código de Moneda Extranjera
++ total: 2546.05 (number) - Total del documeno soporte, es calculado según el manejo de decimales que tenga configurada la empresa al momento de crear el documento soporte.
++ balance: 0 (number) - Saldo pendiente de pago en el documento soporte.
++ observations: Observaciones (string) - Comentarios para agregar información al documento soporte.
++ items (array[ItemOutFC]) - Productos o Servicios asociados al documento soporte.
++ payments (array[PaymentOut]) - Formas de pago asociadas al documento soporte.
++ stamp (StampOutDian) - Campo para indicar el envío electrónico del documento soporte. (si aplica)
++ metadata (Metadata) - Información acerca de la entidad.
+
+
 ## ItemInWithoutTransport (object)
 + code: ``Item-1`` (string,required) - Código único del producto.
 + description: Camiseta de algodón (string) - Nombre o descripción del producto/servicio.
@@ -1647,12 +1740,13 @@ Puedes enviar a la DIAN y por mail tus facturas de venta desde su creación en S
 ## VoucherType (enum)
 + `DebtPayment` - Abono a deuda
 + `AdvancePayment` - Anticipo
-+ `Detailed` - Avanzado
++ `Detailed` - MiscIncome
 
 ## VoucherTypeDetailed (enum)
-+ `Detailed` - Avanzado
++ `Detailed` - Detailed
 
-
+## VoucherTypeMiscIncome (enum)
++ `MiscIncome` - MiscIncome
 
 ## VoucherMovementType (enum)
 + `Debit` - Debito
@@ -1668,20 +1762,39 @@ Puedes enviar a la DIAN y por mail tus facturas de venta desde su creación en S
 
 ## TaxInVoucher (object)
 + id: 13156 (number) - Identificador único del impuesto.
++ base: 100000 (number) Valor Base
 
 ## TaxOutVoucher (object)
 + id: 13156 (number) - Identificador único del impuesto.
-+ name: IVA 19% (string) - Nombre del impuesto.
-+ percentage: 19 (number) - Porcentaje del impuesto.
-+ base_value: 100000 (number) Valor Base
++ name: ReteIVA 15% (string) - Nombre del impuesto.
++ percentage: 15 (number) - Porcentaje del impuesto.
++ base: 100000 (number) Valor Base
++ value: 15000 (number,required) - Valor total del impuesto
 
 ## ItemVoucher (object)
 + due (Due) - Vencimiento / Factura de venta a la cuál se le va a aplicar el abono o pago
++ taxes (array[TaxInVoucher]) - Impuestos que se desean asociar al producto o servicio.
++ discounts (array[RCDiscountsIn]) - ID de los descuentos a aplicar del saldo del vencimeinto.
++ value: 119000 (number,required) - Valor total del item 
+
+## ItemVoucherOut (object)
++ due (Due) - Vencimiento / Factura de venta a la cuál se le va a aplicar el abono o pago
++ taxes (array[TaxOutVoucher]) - Impuestos que se desean asociar al producto o servicio.
++ discounts (array[RCDiscountsOut]) - ID de los descuentos a aplicar del saldo del vencimeinto.
 + value: 119000 (number,required) - Valor total del item 
 
 ## ItemPayouts (object)
 + due (DueDetailedPayouts) - Vencimiento / Factura de conmpra a la cuál se le va a aplicar el abono o pago
 + value: 119000 (number,required) - Valor total del item 
+
+## RCDiscountsIn (object)
++ id: 156 (number,required) - Identificador único del descuento.
++ value: 1000.0 (number,required) - Indica el valor del descuento.
+
+## RCDiscountsOut (object)
++ id: 156 (number,required) - Identificador único del descuento.
++ name: Transporte (string) - Nombre del descuento.
++ value: 100.0 (number,required) - Indica el valor del descuento.
 
 ## ItemPayoutsDetailed (object)
 + account (VoucherAccount, required) - Cuenta contable
@@ -1699,19 +1812,16 @@ Puedes enviar a la DIAN y por mail tus facturas de venta desde su creación en S
 + prefix: ``FV-1`` (string,required) - Prefijo de factura a la cual se le va a aplicar el abono o pago
 + consecutive: 68 (number,required) - Consecutivo de la factura a la cual se le va a aplicar el abono o pago 
 + quote: 1 (number,required) - Número de la cuota que se va a pagar o a abonar
-+ date: ``2021-04-22`` (string) - Fecha pago cuota, formato yyyy-MM-dd.
 
 ## DueDetailed (object)
 + prefix: ``FV-1`` (string,required) - Prefijo de factura a la cual se le va a aplicar el abono o pago
 + consecutive: 68 (number,required) - Consecutivo de la factura a la cual se le va a aplicar el abono o pago 
 + quote: 1 (number,required) - Número de la cuota que se va a pagar o a abonar
-+ date: ``2021-04-22`` (string) - Fecha pago cuota, formato yyyy-MM-dd.
 
 ## DueDetailedPayouts (object)
 + prefix: ``FC-1`` (string,required) - Prefijo de factura a la cual se le va a aplicar el abono o pago
 + consecutive: 68 (number,required) - Consecutivo de la factura a la cual se le va a aplicar el abono o pago 
 + quote: 1 (number,required) - Número de la cuota que se va a pagar o a abonar
-+ date: ``2021-04-22`` (string) - Fecha pago cuota, formato yyyy-MM-dd.
 
 ## ItemInCC (object)
 + account (JournalAccountd, required) - Cuenta contable
@@ -4481,8 +4591,250 @@ Nombre                      |Tipo          |Descripción
 
 
 
+# Group Documento soporte o gasto
+Comprobante que permite registrar las compras o gastos de la empresa.
+
+## Crear documento soporte [POST /v1/purchase-support-documents]
+Crear una nueva documento soporte.
+
+Nombre                      |Tipo          |Descripción     |  Características
+----------------------------|--------------|------------------ |----------------
+**document.id**                |*number*      | Identificador del tipo de comprobante. | Campo obligatorio,  debe existir en Siigo previamnete, se puede consultar por: <a href="https://siigoapi.docs.apiary.io/#reference/catalogos/tipos-de-comprobante">**/document-types**</a>
+**date**                |*date*      | Fecha de comprobante. | Campo obligatorio, debe ser en formato YYYY-MM-DD.
+**number**                |*number*      | Consecutivo/número del comprobante  |  El campo opcional, si se envia debe ser un consecutivo que no exista en Nube.
+**supplier.identification**     |*string*      | Número de identificación del proveedor. | Campo obligatorio, el tercero debe existir en Siigo Nube, debe estar activo.
+**supplier.branch_office**   |*number*      | Número de Sucursal del proveedor. | Campo opcional, si no se envia toma por defecto el 0.
+**Supplier_receipt_number.prefix**     |*string*         | Prefijo del documento soporte del proveedor.  | Campo obligatorio, alfanúmerico de máximo 6 caracteres. 
+**Supplier_receipt_number.number**      |*string*        | Consecutivo del documento soporte del proveedor.  | Campo obligatorio, solo admite números y debe ser de 11 enteros.
+**discount_type**     |*string*                      | Indica el tipo de descuento que se maneja en este tipo de factura "Percentage" o "Value" de esto depende la forma en la que envias un descuento en un ítem al crear el documento soporte |  Campo opcional.
+**stamp**                       |*object*       | Objeto con el dato para envío del documento soporte a la DIAN .  | Campo opcional,se debe enviar en "true" para enviarlo a la DIAN, si no se envia toma por defecto "false".
+**observations**               |*string*      | Comentarios u observaciones del documento soporte. | Campo opcional, tiene un limite de 4.000 carácteres.
+**retentions**              |*array*       | Array con los id de los impuestos tipo ReteICA, ReteIVA o Autoretención. | Campo opcional, se puede consultar por la ruta: <a href="https://siigoapi.docs.apiary.io/#reference/catalogos/impuestos/impuestos">**/taxes**</a>
+**cost_center**                 |*number*      | Identificador del Centro de costos.  | Campo opcional, debe existir en Siigo Nube y estar activo.
+**currency.code**               |*string*      | Código de moneda. | Campo opcional, debe tener la marcación de manejo de moneda extranjera, si no se envia toma por defecto la moneda local,  debe existir en Siigo Nube.
+**currency.exchange_rate**      |*number*      | Tasa / Valor en moneda extranjera. | Campo opcional, debe tener la marcación de manejo de moneda extranjera, si no se envia toma por defecto la moneda local,  debe existir en Siigo Nube.
+**items.type**            |*string*                 | Este campo indica el tipo de item. Si es Product (producto), FixedAsset (activo) o Account (cuenta contable)   | Campo obligatorio, solo admite los 3 valores ya mencionados de Product (producto) FixedAsset (activo) Account (cuenta).
+**items.code**            |*string*                 | Código único del producto.  | Campo obligatorio, debe existir en Siigo Nube y estar activo, alfanúmerico.
+**items.description**     |*string*                 | Nombre o descripción del producto/servicio. |  Campo opcional, si no maneja descripción larga en la configuración y se envia toma el nombre del producto. Si maneja descripción larga en la configuración del producto y no se envia debe tomar la descipción de la configuración del producto. Si se envia y viene vacio lo tomara así en el documento. 
+**items.quantity**        |*number*                 | Cantidad. En Siigo Nube queda registado con dos decimales. |  Campo obligatorio, númerico de máximo 2 decimales.
+**items.price**           |*number*                 | Precio del producto / Valor unitario. |  Campo obligatorio, númerico de máximo 6 decimales.
+**items.discount**        |*number*                 | Valor de descuento del producto. | Campo opcional, puede ser por valor o porcentaje dependiendo de la configuración enviada en este Json en el campo discount_type.
+**items.warehouse**             |*number*      | Identificador de la bodega/almacén asociada al producto. | Campo opcional, si se envia debe existir en Siigo nube y estar activo.
+**items.taxes.id**        |*number*                 | Identificador único del impuesto. | Campo opcional,  es númerico sin decimales.
+**payments.id**              |*number*                | ID del medio de pago.   | Campo obligatorio, debe existir en Siigo Nube y estar activa, se puede consultar por la ruta: <a href="https://siigoapi.docs.apiary.io/#reference/catalogos/formas-de-pago">**/payment-types**</a>
+**payments.value**           |*number*                 | Valor asociado al medio de pago.   |   Campo obligatorio, númerico, máximo 2 decimales.
+**payments.due_date**        |*string*                 | Fecha de pago del vencimeinto.   | Si el payments.id maneja vencimiento, es obligatorio enviar este campo con la fecha del vencimiento en formato yyyy-MM-dd.
+
+
+**[¿Como crear documentos soporte en Siigo Nube?](https://siigonube.portaldeclientes.siigo.com/elaborar-documento-soporte-electronico/)**
+
+
++ Request (application/json)
+
+    + Headers
+
+            Authorization: [access_token]
+            Partner-Id: [nombre de la aplicación que estás integrando]
+
+  + Attributes (DocumentSoportIn)
+    
+
++ Response 201 (application/json)
+
+    + Attributes (DocumentSoportOut)
+
+    + Body
+
+
+## Edición de documentos soporte  [PUT /v1/purchase-support-documents/{id}]
+Dentro de el manejo de este endpoint es importante tener en cuenta que hay varios campos que no será posible poder modificarlos como por ejemplo el document.id, supplier.identification, currency.code y number.
+
+Nombre                      |Tipo          |Descripción     |  Características
+----------------------------|--------------|------------------ |----------------
+**document.id**                |*number*      | Identificador del tipo de comprobante. | Campo obligatorio, no se puede modificar y debe existir en Siigo previamnete, se puede consultar por: /document-types
+**date**                |*date*      | Fecha de comprobante. | Campo obligatorio, debe ser en formato YYYY-MM-DD.
+**number**                |*number*      | Consecutivo/número del comprobante  |  El campo opcional u obligatorio dependiendiendo la configuración de Siigo Nube, si se envia debe ser el mismo consecutivo del documento soporte.
+**supplier.identification**     |*string*      | Número de identificación del proveedor. | Campo obligatorio, no se puede modificar, debe estar activo.
+**supplier.branch_office**   |*number*      | Número de Sucursal del proveedor. | Campo opcional, si no se envia toma por defecto el 0.
+**Supplier_receipt_number.prefix**     |*string*         | Prefijo del documento soporte del proveedor.  | Campo obligatorio, alfanúmerico de máximo 6 caracteres. 
+**Supplier_receipt_number.number**      |*string*        | Consecutivo del documento soporte del proveedor.  | Campo obligatorio, solo admite números y debe ser de 11 enteros.
+**discount_type**     |*string*                      | Indica el tipo de descuento que se maneja en este tipo de factura "Percentage" o "Value" de esto depende la forma en la que envias un descuento en un ítem al crear facturas. |  Campo opcional.
+**stamp**                       |*object*       | Objeto con el dato para envío del documento soporte a la DIAN .  | Campo opcional,se debe enviar en "true" para enviarlo a la DIAN, si no se envia toma por defecto "false".
+**observations**               |*string*      | Comentarios u observaciones del documento soporte. | Campo opcional, tiene un limite de 4.000 carácteres.
+**retentions**              |*array*       | Array con los id de los impuestos tipo ReteICA, ReteIVA o Autoretención. | Campo opcional, se puede consultar por la ruta: <a href="https://siigoapi.docs.apiary.io/#reference/catalogos/impuestos/impuestos">**/taxes**</a>
+**cost_center**                 |*number*      | Identificador del Centro de costos.  | Campo opcional, debe existir en Siigo Nube y estar activo.
+**currency.code**               |*string*      | Código de moneda. | Campo opcional, no se puede modificar, debe tener la marcación de manejo de moneda extranjera, si no se envia toma por defecto la moneda local, debe existir en Siigo Nube.
+**currency.exchange_rate**      |*number*      | Tasa / Valor en moneda extranjera. | Campo opcional, debe tener la marcación de manejo de moneda extranjera, si no se envia toma por defecto la moneda local,  debe existir en Siigo Nube.
+**items.type**            |*string*                 | Este campo indica el tipo de item. Si es Product (producto), FixedAsset (activo) o Account (cuenta contable)   | Campo obligatorio, solo admite los 3 valores ya mencionados de Product (producto) FixedAsset (activo) Account (cuenta).
+**items.code**            |*string*                 | Código único del producto.  | Campo obligatorio, debe existir en Siigo Nube y estar activo, alfanúmerico.
+**items.description**     |*string*                 | Nombre o descripción del producto/servicio. |  Campo opcional, si no maneja descripción larga en la configuración y se envia toma el nombre del producto. Si maneja descripción larga en la configuración del producto y no se envia debe tomar la descipción de la configuración del producto. Si se envia y viene vacio lo tomara así en el documento. 
+**items.quantity**        |*number*                 | Cantidad. En Siigo Nube queda registado con dos decimales. |  Campo obligatorio, númerico de máximo 2 decimales.
+**items.price**           |*number*                 | Precio del producto / Valor unitario. |  Campo obligatorio, númerico de máximo 6 decimales.
+**items.discount**        |*number*                 | Valor de descuento del producto. | Campo opcional, puede ser por valor o porcentaje dependiendo de la configuración enviada en este Json en el campo discount_type.
+**items.warehouse**             |*number*      | Identificador de la bodega/almacén asociada al producto. | Campo opcional, si se envia debe existir en Siigo nube y estar activo.
+**items.taxes.id**        |*number*                 | Identificador único del impuesto. | Campo opcional,  es númerico sin decimales.
+**payments.id**              |*number*                | ID del medio de pago.   | Campo obligatorio, debe existir en Siigo Nube y estar activa, se puede consultar por la ruta: <a href="https://siigoapi.docs.apiary.io/#reference/catalogos/formas-de-pago">**/payment-types**</a>
+**payments.value**           |*number*                 | Valor asociado al medio de pago.   |   Campo obligatorio, númerico, máximo 2 decimales.
+**payments.due_date**        |*string*                 | Fecha de pago del vencimeinto.   | Si el payments.id maneja vencimiento, es obligatorio enviar este campo con la fecha del vencimiento en formato yyyy-MM-dd.
+
+
+
++ Parameters
+    + id(string,`b446fbc3-99c5-4c2d-8a28-1c0d3721ab91`)
+    
++ Request (application/json)
+
+    + Headers
+
+            Authorization: [access_token]
+            Partner-Id: [nombre de la aplicación que estás integrando]
+
+    + Attributes (DocumentSoportIn)
+    
+
++ Response 201 (application/json)
+
+    + Attributes (DocumentSoportOut)
+
+    + Body    
+    
+
+## Consultar Tipos de documentos soporte [GET /v1/document-types?type=DS]
+Lista todos los tipos de documento soporte que se encuentran configurados en Siigo Nube y sus características.
+
+**Datos que encontrarás en el response:**
+Nombre          |Tipo                          |Descripción
+----------------|------------------------------|---------------
+id              |*number*                      | Identificador único del tipo de documento soporte, este dato se debe enviar en las creaciones de la factura.
+code            |*string*                      | Código asignado en Siigo Nube al tipo de documento soporte.
+name            |*string*                      | Nombre del tipo de documento soporte.
+description     |*string*                      | Descripción del tipo de documento soporte.
+type            |*string*                      | Indica el tipo de documento en este caso "DS" para documentos soporte.
+active          |*boolean*                     | indica el estado del tipo de documento, si se encuentra activo o inactivo.
+cost_center      |*boolean*                     | Indica si se pueden manejar centros de costo o no en este tipo de documento soporte.
+cost_center_mandatory       |*boolean*                     | Indica si se maneja centro de costo de forma obligatoria en este tipo de documento soporte.
+cost_center_default       |*number*                     | Indica el número de ID del documento soporte.
+automatic_number    |*boolean*                     | Indica si se maneja numeración automática o no en este tipo de documento soporte, si es false, en la creación de facturas usando este tipo, se debe enviar el campo "number".
+consecutive       |*number*                      | Número del próximo consecutivo de factura.
+decimals      |*boolean*                     | Indica si se manejan decimales en este tipo de documento soporte.
+reteiva       |*boolean*                     | Indica si se pueden usar retenciones de tipo ReteIVA en este tipo de documento soporte.
+reteica       |*boolean*                     | Indica si se pueden usar retenciones de tipo ReteICA en este tipo de documento soporte.
+
+
++ Request (application/json)
+
+    + Headers
+
+            Authorization: [access_token]
+            Partner-Id: [nombre de la aplicación que estás integrando]
+
++ Response 200 (application/json)
+
+    + Attributes (array[DocumentTypeDS])
+
+    + Body
+
+## Consultar documentos soporte [GET /v1/purchase-support-documents/{purchase-support-documents_id}]
+Consultar una factura por su id.
+
+Esta es la información que obtendrás de la documento soporte consultada:
+Nombre                   |Tipo                   |Descripción
+-------------------------|-----------------------|---------------
+**id**                   |string                 | Identificador de la documento soporte.
+**document.id**          |number                 | Identificador del comprobante, se puede consultar en https://api.siigo.com/v1/document-types?type=DS.
+**number**               |number                 | Consecutivo/número del comprobante, el campo es obligatorio según la configuración del tipo de comprobante.
+**name**                 |string                 | Tipo de Comprobante + Código de Comprobante + Número de Comprobante
+**date**                 |string                 | Fecha del documento soporte, formato yyyy-MM-dd.
+**supplier.id**          |string                 | Serial identificador del cliente.
+**supplier.identification**         |string                 |Número de identificación del proveedor.
+**supplier.branch_office**          |string                 |Sucursal, valor por default 0.
+**discount_type**     |string                      | Indica el tipo de descuento que se maneja en este tipo del documento soporte "Percentage" o "Value".
+**cost_center**            |number                 | Indica el Centro de costo del documento soporte.
+**currency.code**          |string                 | Código de moneda.
+**currency.exchange_rate**          |string                 | Tasa / Valor en moneda extranjera.
+**total**                 |number                 | Total del documento soporte, es calculado según el manejo de decimales que tenga configurada la empresa al momento de crear el documento soporte.
+**balance**               |number                 | Saldo pendiente de pago en el documento soporte.
+**observations**          |string                 | Comentarios para agregar información del documento soporte.
+**items.id**    |string                 | Identificador del producto/servicio.
+**items.type**            |string                 |Tipo de producto facturado, puede ser:  Product (producto) FixedAsset (activo) Account (cuenta).
+**items.code**            |string                 | Código único del producto.
+**items.description**     |string                 | Nombre o descripción del producto/servicio.
+**items.quantity**        |number                 | Cantidad. En Siigo Nube queda registado con dos decimales.
+**items.price**           |number                 | Precio del producto / Valor unitario. En Siigo Nube queda registado con dos decimales.
+**items.discount.percentage**        |number                 | Porcentaje de descuento del producto
+**items.discount.value**        |number                 | Valor de descuento del producto.
+**items.taxes.id**        |number                 | Identificador único del impuesto.
+**items.taxes.name**      |string                 | Nombre del impuesto.
+**items.taxes.percentage**   |number                 | Porcentaje de impuesto del producto
+**items.taxes.value**        |number                 | Valor de impuesto del producto
+**items.taxes.total**        |number                 | Total del producto, incluye impuestos.
+**payments.id**              |number                 | ID del medio de pago.
+**payments.name**            |string                 | Nombre del medio de pago.
+**payments.value**           |number                 | Valor asociado al medio de pago.
+**payments.due_date**        |string                 | Fecha pago cuota, formato yyyy-MM-dd.
+**created**                  |string                 | La fecha en la que se creó la entidad.
+**last_updated**             |string                 | La fecha en la que se actualizó la entidad por última vez.
+
+
+**[¿Como consultar documentos soporte en Siigo Nube?](https://siigonube.portaldeclientes.siigo.com/buscar-o-consultar-un-documento-soporte-electronico/)**
+
+
+Para visualizar un documento soporte en Siigo Nube puedes ingresar al ícono de la lupa que corresponde al Buscador, digita el número y selecciona en el listado Facturas compra / Gasto.
+
++ Parameters
+    + invoice_id (string,`b446fbc3-99c5-4c2d-8a28-1c0d3721ab91`)
+
++ Request
+    
+    + Headers
+            
+            Authorization: [access_token]
+            Partner-Id: [nombre de la aplicación que estás integrando]
+
++ Response 200 (application/json)
+
+    + Attributes (DocumentSoportOut)
+
+    + Body
+    
+    
+    
+
+##  Borrar documento soporte [DELETE /v1/purchase-support-documents/id]
+
+Borrar una documento soporte.
+
+Nombre                      |Tipo          |Descripción     
+----------------------------|--------------|------------------
+**id**           |*string*                 | Indicador único del documento soporte
+**deleted**      |*boolean*             | Indica si el documento soporte fue eliminada exitosamente. 
+
+
++ Request (application/json)
+
+    + Headers
+    
+            Authorization: [access_token]
+            Partner-Id: [nombre de la aplicación que estás integrando]
+    + Body
+    
+
++ Response 200 (application/json)
+
+    + Headers
+    
+    + Body
+    
+            {
+                "id": "63f918c2-ca65-4edc-a7db-66bcdd5159fb",
+                "deleted": true
+            }
+
+
+
+
 # Group Recibos de Caja 
-Comprobante que permite registrar los abonos a deuda, anticipos y recibos de caja avanzados.
+Comprobante que permite registrar los abonos a deuda, anticipos y recibos de caja de otros ingresos.
 
 ## Crear Recibo de caja [POST /v1/vouchers]
 Este endpoint te permite crear recibos de caja.
@@ -4491,7 +4843,7 @@ Nombre                      |Tipo          |Descripción     |  Características
 ----------------------------|--------------|------------------ |----------------
 **document.id**                |*number*      | Identificador del tipo de comprobante. | Campo obligatorio,  debe existir en Siigo previamnete, se puede consultar por: <a href="https://siigoapi.docs.apiary.io/#reference/catalogos/tipos-de-comprobante">**/document-types**</a>
 **date**                |*date*      | Fecha de comprobante. | Campo obligatorio, debe ir en fomato de AAAA-MM-DD.
-**type**                 | **string**      | Indica el tipo de recibo que se realizara.  |  Campo obligatorio, se debe inficar si es anticipo, abono a deuda o un recibo avanzado.
+**type**                 | **string**      | Indica el tipo de recibo que se realizara.  |  Se debe inficar si es anticipo, abono a deuda u otros ingresos.
 **customer.identification**     |*string*      | Número de identificación del cliente. | Campo obligatorio, debe existir en Siigo Nube, debe estar activo.
 **customer.branch_office**   |*number*      | Número de Sucursal del cliente. | Campo opcional, si no se envia toma por defecto el 0.
 **currency.code**               |*string*      | Código de moneda. | Campo opcional, debe tener la marcación de manejo de moneda extranjera, si no se envia toma por defecto la moneda local,  debe existir en Siigo Nube.
@@ -4501,6 +4853,14 @@ Nombre                      |Tipo          |Descripción     |  Características
 **items.due.consecutive**        |*number*                 | Consecutivo del vencimiento a pagar. |  Campo obligatorio, debe ser númerico sin decimales.
 **items.due.quote**           |*number*                 | Couta del vencimiento a pagar. |  Campo obligatorio, debe ser númerico sin decimales.
 **items.due.date**           |*date*                 | Fecha de pago del vencimiento. |  Campo obligatorio, debe ir en fomato de AAAA-MM-DD.
+**items.taxes.id**        |*number*                 | Identificador único del impuesto.
+**items.taxes.name**      |*string*                 | Nombre del impuesto.
+**items.taxes.percentage**   |*number*                 | Porcentaje de impuesto del relacionado
+**items.taxes.base**        |*number*                 | Base del impuesto relacionado.
+**items.taxes.value**        |*number*                 | Valor de impuesto del relacionado
+**items.discounts.id**        |*number*                 | Identificador único del descuento.
+**items.discounts.name**      |*string*                 | Nombre del descuento.
+**items.discounts.value**        |*number*                 | Valor de descuento del relacionado.
 **payments.id**              |*number*                | ID del medio de pago.   | Campo obligatorio, debe existir en Siigo Nube y estar activa, se puede consultar por la ruta: <a href="https://siigoapi.docs.apiary.io/#reference/catalogos/formas-de-pago">**/payment-types**</a>
 **payments.value**           |*number*                 | Valor asociado al medio de pago.   |   Campo obligatorio, númerico, máximo 2 decimales.
 
@@ -4510,7 +4870,7 @@ Tipo            |Tipo de Recibo
 ----------------|----------------------
 DebtPayment     |Abono a deuda
 AdvancePayment  |Anticipo
-Detailed        |Avanzado
+MiscIncome      |Otros ingresos
 
 **Json de ejemplo de un recibo de anticipo:** 
 ```json    
@@ -4550,68 +4910,34 @@ Detailed        |Avanzado
 
     + Body
 
-## Crear Recibo de caja - Avanzado [POST /v1/Vouchers]
-Crear un nuevo Recibo de caja avanzado.
+## Crear Recibo de caja - Otros ingresos [POST /v1/Vouchers]
+Crear un nuevo Recibo de caja de tipo otros ingresos.
 
-Este tipo de recibo de caja tiene la característica de poder asociar múltiples registros contables en donde puede llevarse a cabo la adición de cuentas de bancos, vencimientos e impuestos.
+Este tipo de recibo de caja tiene la característica de poder asociariar otros ingresos por medio del recibo de caja, estos ingresos los puedes crear en Siigo Nube en la  opción: https://siigonube.siigo.com/#/accountingparameter/1639?conceptType=1
+Para consultar el ID de estos tipos de ingreso debes realizar una consulta (GET) al endpoint de /misc-income 
 
 **Json de ejemplo:** 
 ```json    
 {
     "document": {
-        "id": 24445
+        "id": 170674
     },
-    "date": "2023-12-15",
-    "type": "Detailed",
+    "type":"MiscIncome",   
+    "date": "2026-03-19",
     "customer": {
-        "identification": "8694251",
-        "branch_office": 0
-    },
-    "items": [
-        {
-            "account": {
-                "code": "11100501",
-                "movement": "Debit"
-            },
-            "description": "FV-2 Base",
-            "value": 50
+        "identification": "1152489636",
+        "branch_office": "0"
+    },    
+      "income": {
+        "id": 174
         },
-        {
-            "account": {
-                "code": "13050501",
-                "movement": "Credit"
+        "payment":
+            {
+                "id": 3720,
+                "value": 12000
             },
-            "due": {
-                "prefix": "FV-1",
-                "consecutive": 684,
-                "quote": 1,
-                "date": "2020-02-15"
-            },
-            "description": "FV-2 Base",
-            "value": 50
-        },
-        {
-            "account": {
-                "code": "24081001",
-                "movement": "Debit"
-            },
-            "tax": {
-                "id": 13156
-            },
-            "description": "FV-2 Base",
-            "value": 19
-        },
-        {
-            "account": {
-                "code": "11100501",
-                "movement": "Credit"
-            },
-            "description": "FV-2 Base",
-            "value": 19
-        }
-    ],
-      "observations":"observación de prueba"
-}
+        "observations":"observación de prueba"
+}    "observations":"observación de prueba"
 ```
 
 
@@ -4640,17 +4966,28 @@ Lista todos los tipos de recibos de caja que se encuentran configurados en Siigo
 
 Param                  |Type       |Description
 -----------------------|-----------|-----------------------------------------------------------------------------------
-**id**                   |string                 | Identificador de el recibo de caja.
-**code**               |number                 | Codigo del tipo de recibo de caja.
-**name**                 |string                 | Nombre interno para identificar el comprobante de recibo de caja.
-**description**          |string                 | Descripción del nombre de el recibo de caja.
-**type**               |string                 | Tipo de recibo de caja.
-**active**         |*boolean*                     | Indica si el recibo de caja esta activa o no.
-**cost_center**      |*boolean*                     | Indica si se pueden manejar centros de costo o no en este tipo de recibo de caja.
-**cost_center_mandatory**       |*boolean*                     | Indica si se maneja centro de costo de forma obligatoria en este tipo de recibo de caja.
-**cost_center_default**    |*boolean*                     | Indica si se maneja un centro de costos por defecto en el tipo de recibo de caja.
-**automatic_number**       |*boolean*                     | Indica si se maneja numeración automática o no en este tipo de recibo de caja, si es false, en la creación de recibo de caja usando este tipo, se debe enviar el campo "number".
-**consecutive**      |*number*                      | Número del próximo consecutivo de el recibo de caja.
+**id**                   |string                 | Identificador de la recibo de caja.
+**document.id**          |number                 | Identificador del comprobante, se puede consultar en https://api.siigo.com/v1/document-types?type=RC.
+**number**               |number                 | Consecutivo/número del comprobante, el campo es obligatorio según la configuración del tipo de comprobante.
+**name**                 |string                 | Tipo de Comprobante + Código de Comprobante + Número de Comprobante. Por ejemplo: RC-1-22
+**date**                 |string                 | Fecha de la recepción de pago, formato yyyy-MM-dd.
+**customer.id**          |string                 | Serial identificador del cliente.
+**customer.identification**      |string                 | Número de identificación del cliente.
+**customer.branch_office**          |string                 |Sucursal, valor por default 0.
+**items.taxes.id**        |number                 | Identificador único del impuesto.
+**items.taxes.name**      |string                 | Nombre del impuesto.
+**items.taxes.percentage**   |number                 | Porcentaje de impuesto del relacionado
+**items.taxes.base**        |number                 | Base del impuesto relacionado.
+**items.taxes.value**        |number                 | Valor de impuesto del relacionado
+**items.discounts.id**        |number                 | Identificador único del descuento.
+**items.discounts.name**      |string                 | Nombre del descuento.
+**items.discounts.value**        |number                 | Valor de descuento del relacionado.
+**payments.id**              |number                 | ID del medio de pago.
+**payments.name**            |string                 | Nombre del medio de pago.
+**payments.value**           |number                 | Valor asociado al medio de pago.
+**cost_center**            |number                 | Indica el Centro de costo del recibo de caja.
+**observations**          |string                 | Comentarios para agregar información al recibo de caja.
+
 
 
 + Request (application/json)

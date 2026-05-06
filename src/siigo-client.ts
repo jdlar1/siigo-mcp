@@ -15,6 +15,7 @@ import type {
   SiigoPdfResponse,
   SiigoProduct,
   SiigoPurchase,
+  SiigoPurchaseSupportDocument,
   SiigoQuotation,
   SiigoStampErrorsResponse,
   SiigoToken,
@@ -456,6 +457,41 @@ export class SiigoClient {
     return this.makeRequest<unknown>('DELETE', `/v1/purchases/${id}`);
   }
 
+  // ─── Purchase Support Documents (Documento Soporte) ─────────────────────
+
+  async getPurchaseSupportDocuments(params?: {
+    page?: number;
+    page_size?: number;
+  }): Promise<SiigoApiResponse<SiigoPurchaseSupportDocument>> {
+    return this.makeRequest<SiigoPurchaseSupportDocument>(
+      'GET',
+      '/v1/purchase-support-documents',
+      undefined,
+      params as Record<string, unknown>,
+    );
+  }
+
+  async getPurchaseSupportDocument(id: string): Promise<SiigoApiResponse<SiigoPurchaseSupportDocument>> {
+    return this.makeRequest<SiigoPurchaseSupportDocument>('GET', `/v1/purchase-support-documents/${id}`);
+  }
+
+  async createPurchaseSupportDocument(
+    purchaseSupportDocument: Partial<SiigoPurchaseSupportDocument>,
+  ): Promise<SiigoApiResponse<SiigoPurchaseSupportDocument>> {
+    return this.makeRequest<SiigoPurchaseSupportDocument>('POST', '/v1/purchase-support-documents', purchaseSupportDocument);
+  }
+
+  async updatePurchaseSupportDocument(
+    id: string,
+    purchaseSupportDocument: Partial<SiigoPurchaseSupportDocument>,
+  ): Promise<SiigoApiResponse<SiigoPurchaseSupportDocument>> {
+    return this.makeRequest<SiigoPurchaseSupportDocument>('PUT', `/v1/purchase-support-documents/${id}`, purchaseSupportDocument);
+  }
+
+  async deletePurchaseSupportDocument(id: string): Promise<SiigoApiResponse<unknown>> {
+    return this.makeRequest<unknown>('DELETE', `/v1/purchase-support-documents/${id}`);
+  }
+
   // ─── Payment Receipts (Recibos de Pago / Egreso) ──────────────────────
 
   async getPaymentReceipts(params?: { page?: number; page_size?: number }): Promise<SiigoApiResponse<SiigoPaymentReceipt>> {
@@ -554,6 +590,14 @@ export class SiigoClient {
 
   async getFixedAssets(): Promise<SiigoApiResponse<SiigoFixedAsset>> {
     return this.makeRequest<SiigoFixedAsset>('GET', '/v1/fixed-assets');
+  }
+
+  async getExpenses(): Promise<SiigoApiResponse<unknown>> {
+    return this.makeRequest<unknown>('GET', '/v1/expenses');
+  }
+
+  async getMiscIncome(): Promise<SiigoApiResponse<unknown>> {
+    return this.makeRequest<unknown>('GET', '/v1/misc-income');
   }
 
   // ─── Reports ───────────────────────────────────────────────────────────

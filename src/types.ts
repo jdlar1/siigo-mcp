@@ -90,6 +90,10 @@ export interface SiigoTaxRef {
   id: number;
 }
 
+export interface SiigoTaxWithBaseRef extends SiigoTaxRef {
+  base?: number;
+}
+
 export interface SiigoTaxOut {
   id: number;
   name?: string;
@@ -112,6 +116,10 @@ export interface SiigoPayment {
   id: number;
   value: number;
   due_date?: string;
+}
+
+export interface SiigoNamedPayment extends SiigoPayment {
+  name?: string;
 }
 
 export interface SiigoStamp {
@@ -405,6 +413,12 @@ export interface SiigoVoucherItem {
   description?: string;
   value?: number;
   cost_center?: number;
+  taxes?: SiigoTaxWithBaseRef[];
+  discounts?: Array<{
+    id: number;
+    name?: string;
+    value: number;
+  }>;
 }
 
 export interface SiigoVoucher {
@@ -413,14 +427,18 @@ export interface SiigoVoucher {
   number?: number;
   name?: string;
   date: string;
-  type: 'DebtPayment' | 'AdvancePayment' | 'Advanced';
+  type: 'DebtPayment' | 'AdvancePayment' | 'MiscIncome';
   customer: {
     identification: string;
-    branch_office?: number;
+    branch_office?: number | string;
   };
+  income?: {
+    id: number;
+  };
+  payment?: SiigoPayment;
   cost_center?: number;
   currency?: SiigoCurrency;
-  items: SiigoVoucherItem[];
+  items?: SiigoVoucherItem[];
   payments?: SiigoPayment[];
   observations?: string;
   total?: number;
@@ -505,6 +523,51 @@ export interface SiigoPurchase {
   metadata?: SiigoMetadata;
 }
 
+// ─── Purchase Support Documents (Documento Soporte) ─────────────────────────
+
+export interface SiigoSupplierReceiptNumber {
+  prefix: string;
+  number: string;
+}
+
+export interface SiigoPurchaseSupportDocumentItem {
+  id?: string;
+  type?: 'Product' | 'FixedAsset' | 'Account';
+  code?: string;
+  description?: string;
+  quantity?: number;
+  price?: number;
+  discount?: number | SiigoDiscount;
+  taxes?: SiigoTaxRef[];
+  account?: {
+    code: string;
+    movement?: 'Debit' | 'Credit';
+  };
+  warehouse?: number;
+  [key: string]: unknown;
+}
+
+export interface SiigoPurchaseSupportDocument {
+  id?: string;
+  document: SiigoDocumentRef & { number?: number };
+  number?: number;
+  name?: string;
+  date: string;
+  supplier: SiigoInvoiceCustomer;
+  cost_center?: number;
+  supplier_receipt_number?: SiigoSupplierReceiptNumber;
+  currency?: SiigoCurrency;
+  observations?: string;
+  discount_type?: 'Percentage' | 'Value';
+  stamp?: SiigoStamp;
+  items: SiigoPurchaseSupportDocumentItem[];
+  payments: SiigoPayment[];
+  retentions?: SiigoTaxRef[];
+  total?: number;
+  balance?: number;
+  metadata?: SiigoMetadata;
+}
+
 // ─── Journals (Comprobantes Contables) ─────────────────────────────────────
 
 export interface SiigoJournalItem {
@@ -555,7 +618,7 @@ export interface SiigoFixedAsset {
 
 // ─── Catalog Types ─────────────────────────────────────────────────────────
 
-export type DocumentTypeCode = 'FV' | 'RC' | 'NC' | 'FC' | 'CC' | 'RP' | 'C';
+export type DocumentTypeCode = 'FV' | 'RC' | 'NC' | 'FC' | 'CC' | 'RP' | 'C' | 'DS';
 
 export interface SiigoDocumentType {
   id: number;
@@ -577,7 +640,7 @@ export interface SiigoDocumentType {
   reteica?: boolean;
   self_withholding?: boolean;
   self_withholding_limit?: number;
-  electronic_type?: 'NoElectronic' | 'Electronicvoice' | 'ContingencyInvoice' | 'ExportInvoice';
+  electronic_type?: 'NoElectronic' | 'Electronicvoice' | 'ContingencyInvoice' | 'ExportInvoice' | 'Physical' | 'Electronic';
   consumption_tax?: boolean;
   document_support?: boolean;
   cargo_transportation?: boolean;

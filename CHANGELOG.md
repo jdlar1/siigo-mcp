@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.2.0] - 2026-05-05
+
+### Added
+- Added first-class Documento Soporte support through `siigo_get_purchase_support_documents`, `siigo_get_purchase_support_document`, `siigo_create_purchase_support_document`, `siigo_update_purchase_support_document`, and `siigo_delete_purchase_support_document`.
+- Added document type filter support for `DS`.
+- Added read-only catalog tools for receipt adjustments and miscellaneous income: `siigo_get_expenses` and `siigo_get_misc_income`.
+- Added client test coverage for purchase support document endpoints, `DS` document types, and the new receipt-related catalogs.
+
+### Changed
+- Split MCP tool registration into resource-specific files under `src/tools/` to make endpoint maintenance and reviews smaller.
+- Updated cash receipt creation to expose the new `MiscIncome` voucher type and flexible payload shapes for receipt taxes, discounts, income concepts, and singular payments.
+- Updated Siigo API documentation tracking for purchase support documents, cash receipt adjustments, and `invalid_dian_resolution`.
+
 ## [3.0.1] - 2026-03-11
 
 ### Fixed

@@ -2,7 +2,7 @@
 
 A Model Context Protocol (MCP) server that provides full integration with the Siigo API, enabling access to Colombian accounting software features including products, customers, invoices, quotations, purchases, credit notes, vouchers, payment receipts, journals, webhooks, and more.
 
-**v3.0.1** - Full Siigo API parity with 68 tools, MCP SDK v1.27, Zod schemas, improved MCP error propagation, and complete TypeScript type safety.
+**v3.2.0** - Split tool modules for maintainability, 75 tools, purchase support documents, updated cash receipt support, MCP SDK v1.29, Zod schemas, improved MCP error propagation, and complete TypeScript type safety.
 
 ## Features
 
@@ -13,9 +13,10 @@ This MCP server provides access to all Siigo API endpoints:
 - **Customers**: Manage customers, suppliers, and third parties
 - **Invoices**: Sales invoices with electronic invoicing, **healthcare sector**, **batch creation**, annulment, PDF, XML, and DIAN error queries
 - **Quotations**: Full CRUD for quotations (cotizaciones) -- **NEW in v3**
-- **Purchases**: Purchase invoices and expenses (including Documentos de Soporte via `document_support` flag)
+- **Purchase Support Documents**: Full CRUD for documentos soporte (`/purchase-support-documents`)
+- **Purchases**: Purchase invoices and expenses
 - **Credit Notes**: Create and query credit notes with PDF support and healthcare sector fields
-- **Vouchers**: Cash receipts (recibos de caja) - create and query
+- **Vouchers**: Cash receipts (recibos de caja), including debt payments, advance payments, and miscellaneous income
 - **Payment Receipts**: Payment receipts / disbursements (recibos de pago / comprobantes de egreso) - full CRUD
 - **Journals**: Accounting journal entries (comprobantes contables)
 - **Webhooks**: Subscribe to and manage webhook events -- **NEW in v3**
@@ -24,11 +25,11 @@ This MCP server provides access to all Siigo API endpoints:
 - **Account Groups**: Create and edit inventory categories -- **NEW in v3**
 
 ### Catalogs
-- Document types (FV, RC, NC, FC, CC, RP, C)
+- Document types (FV, RC, NC, FC, CC, RP, C, DS)
 - Taxes, payment types, cost centers
 - Users/sellers, warehouses, price lists
 - Account groups, cities, ID types
-- Fiscal responsibilities, **fixed assets**
+- Fiscal responsibilities, **fixed assets**, expenses, miscellaneous income concepts
 
 ### Reports
 - Trial balance reports (general and by third party)
@@ -171,7 +172,16 @@ Add to your Claude Desktop config (`claude_desktop_config.json`):
 |---|---|---|
 | `siigo_get_vouchers` | List cash receipts (recibos de caja) | read-only |
 | `siigo_get_voucher` | Get a cash receipt by ID | read-only |
-| `siigo_create_voucher` | Create cash receipt (DebtPayment, AdvancePayment, Advanced) | |
+| `siigo_create_voucher` | Create cash receipt (DebtPayment, AdvancePayment, MiscIncome) | |
+
+### Purchase Support Documents (5 tools)
+| Tool | Description | Annotations |
+|---|---|---|
+| `siigo_get_purchase_support_documents` | List purchase support documents | read-only |
+| `siigo_get_purchase_support_document` | Get a purchase support document by ID | read-only |
+| `siigo_create_purchase_support_document` | Create purchase support document (document type DS) | |
+| `siigo_update_purchase_support_document` | Update a purchase support document | |
+| `siigo_delete_purchase_support_document` | Delete a purchase support document | destructive |
 
 ### Purchases (5 tools)
 | Tool | Description | Annotations |
@@ -206,10 +216,10 @@ Add to your Claude Desktop config (`claude_desktop_config.json`):
 | `siigo_update_webhook` | Update a webhook subscription | |
 | `siigo_delete_webhook` | Delete a webhook subscription | destructive |
 
-### Catalogs (11 tools + account groups above)
+### Catalogs (13 tools + account groups above)
 | Tool | Description |
 |---|---|
-| `siigo_get_document_types` | Document types (FV, RC, NC, FC, CC, RP, C) |
+| `siigo_get_document_types` | Document types (FV, RC, NC, FC, CC, RP, C, DS) |
 | `siigo_get_taxes` | Taxes (IVA, Retefuente, ReteIVA, ReteICA, etc.) |
 | `siigo_get_payment_types` | Payment methods |
 | `siigo_get_cost_centers` | Cost centers |
@@ -217,6 +227,8 @@ Add to your Claude Desktop config (`claude_desktop_config.json`):
 | `siigo_get_warehouses` | Warehouses |
 | `siigo_get_price_lists` | Price lists (up to 12) |
 | `siigo_get_cities` | Colombian cities |
+| `siigo_get_expenses` | Expenses for cash receipt adjustments |
+| `siigo_get_misc_income` | Miscellaneous income concepts for cash receipts |
 | `siigo_get_id_types` | Identification types |
 | `siigo_get_fiscal_responsibilities` | Fiscal responsibilities |
 | `siigo_get_fixed_assets` | Fixed assets |
