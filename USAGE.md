@@ -33,6 +33,17 @@ siigo-mcp
 
 ## MCP Client Configuration
 
+### Stateless Streamable HTTP
+
+Build the project, then start the HTTP transport:
+
+```bash
+pnpm build
+MCP_TRANSPORT=http MCP_AUTH_TOKEN=replace_with_a_long_random_token pnpm start
+```
+
+Connect the MCP client to `http://127.0.0.1:3000/mcp` and send the configured token as a bearer token. Set `MCP_HOST=0.0.0.0` for container deployments; a non-loopback bind requires `MCP_AUTH_TOKEN`.
+
 ### Claude Desktop Configuration
 Add to your Claude Desktop config file:
 

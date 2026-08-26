@@ -73,6 +73,10 @@ cp .env.example .env
 | Variable | Default | Description |
 |---|---|---|
 | `SIIGO_BASE_URL` | `https://api.siigo.com` | API base URL |
+| `MCP_TRANSPORT` | `stdio` | MCP transport: `stdio` or stateless Streamable HTTP (`http`) |
+| `MCP_HOST` | `127.0.0.1` | HTTP bind address |
+| `MCP_PORT` | `PORT` or `3000` | HTTP listening port |
+| `MCP_AUTH_TOKEN` | — | Bearer token for HTTP requests; required when binding outside loopback |
 
 ### Getting Siigo API Credentials
 
@@ -82,6 +86,28 @@ cp .env.example .env
 4. For testing, use the sandbox environment
 
 ## MCP Client Configuration
+
+### Stateless Streamable HTTP
+
+The default transport remains stdio. To run a stateless HTTP endpoint locally:
+
+```bash
+MCP_TRANSPORT=http pnpm start
+```
+
+The endpoint is available at `http://127.0.0.1:3000/mcp`. Each POST uses a fresh MCP server and transport, does not issue an MCP session ID, and returns a JSON response instead of retaining an SSE session.
+
+For a network-accessible deployment, set an explicit bearer token:
+
+```bash
+MCP_TRANSPORT=http \
+MCP_HOST=0.0.0.0 \
+MCP_PORT=3000 \
+MCP_AUTH_TOKEN=replace_with_a_long_random_token \
+pnpm start
+```
+
+Clients must send `Authorization: Bearer <token>`. Terminate TLS at a trusted reverse proxy or hosting platform; do not expose the endpoint over plaintext HTTP.
 
 ### Claude Desktop
 
@@ -356,6 +382,8 @@ The server handles Siigo API errors and returns structured error responses with 
 siigo-mcp/
 ├── src/
 │   ├── index.ts          # MCP server - tool registration with Zod schemas
+│   ├── mcp-server.ts     # MCP server factory and tool registration
+│   ├── http-server.ts    # Stateless Streamable HTTP application
 │   ├── siigo-client.ts   # HTTP client for all Siigo API endpoints
 │   └── types.ts          # Full TypeScript interfaces for all document types
 ├── dist/                 # Compiled output (ESM)
