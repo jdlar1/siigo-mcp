@@ -1,31 +1,73 @@
 {
   "name": "@jdlar/siigo-mcp",
-  "version": "3.2.0",
+  "version": "4.0.0",
   "description": "Model Context Protocol (MCP) server for Siigo Colombian accounting software API integration",
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./client": {
+      "types": "./dist/siigo-client.d.ts",
+      "import": "./dist/siigo-client.js"
+    },
+    "./contracts": {
+      "types": "./dist/contracts.d.ts",
+      "import": "./dist/contracts.js"
+    },
+    "./server": {
+      "types": "./dist/mcp-server.d.ts",
+      "import": "./dist/mcp-server.js"
+    },
+    "./http": {
+      "types": "./dist/http-server.d.ts",
+      "import": "./dist/http-server.js"
+    },
+    "./results": {
+      "types": "./dist/mcp-results.d.ts",
+      "import": "./dist/mcp-results.js"
+    },
+    "./schemas": {
+      "types": "./dist/schemas/index.d.ts",
+      "import": "./dist/schemas/index.js"
+    },
+    "./types": {
+      "types": "./dist/types.d.ts",
+      "import": "./dist/types.js"
+    },
+    "./version": {
+      "types": "./dist/version.d.ts",
+      "import": "./dist/version.js"
+    },
+    "./package.json": "./package.json"
+  },
   "scripts": {
     "build": "tsc",
-    "start": "node dist/index.js",
-    "dev": "tsx src/index.ts",
+    "start": "node dist/cli.js",
+    "dev": "tsx src/cli.ts",
     "lint": "biome check src test package.json tsconfig.json jest.config.cjs biome.json",
     "lint:fix": "biome check src test package.json tsconfig.json jest.config.cjs biome.json --write",
     "format": "biome format src test package.json tsconfig.json jest.config.cjs biome.json",
     "format:write": "biome format src test package.json tsconfig.json jest.config.cjs biome.json --write",
     "test": "pnpm build && node --experimental-vm-modules ./node_modules/jest/bin/jest.js",
-    "prepublishOnly": "pnpm build",
+    "prepack": "pnpm build",
+    "prepublishOnly": "pnpm lint && pnpm test",
     "clean": "rm -rf dist"
   },
   "bin": {
-    "siigo-mcp": "./dist/index.js"
+    "siigo-mcp": "bin/siigo-mcp"
   },
   "files": [
     "dist/",
     "bin/",
     "README.md",
+    "USAGE.md",
     "CONTRIBUTING.md",
     "CHANGELOG.md",
+    "docs/",
     ".env.example"
   ],
   "keywords": [
@@ -43,7 +85,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/jdlar1/siigo-mcp.git"
+    "url": "git+https://github.com/jdlar1/siigo-mcp.git"
   },
   "bugs": {
     "url": "https://github.com/jdlar1/siigo-mcp/issues"

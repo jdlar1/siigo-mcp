@@ -1,5 +1,11 @@
-import { z } from 'zod';
 import { errorResult, jsonResult } from '../mcp-results.js';
+import {
+  accountGroupEntityToolOutputSchema,
+  accountGroupInputSchema,
+  accountGroupListInputSchema,
+  accountGroupListToolOutputSchema,
+  accountGroupUpdateInputSchema,
+} from '../schemas/account-groups.js';
 import type { ToolContext } from '../tool-context.js';
 
 export function registerAccountGroupTools({ server, client }: ToolContext) {
@@ -12,12 +18,13 @@ export function registerAccountGroupTools({ server, client }: ToolContext) {
     {
       title: 'Get Account Groups',
       description: 'Get inventory classification groups (account groups) catalog',
-      inputSchema: z.object({}),
-      annotations: { readOnlyHint: true, destructiveHint: false },
+      inputSchema: accountGroupListInputSchema,
+      outputSchema: accountGroupListToolOutputSchema,
+      annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true },
     },
-    async () => {
+    async (_args, extra) => {
       try {
-        return jsonResult(await client.getAccountGroups());
+        return jsonResult(await client.getAccountGroups({ signal: extra.signal }));
       } catch (e) {
         return errorResult('siigo_get_account_groups', e);
       }
@@ -29,15 +36,13 @@ export function registerAccountGroupTools({ server, client }: ToolContext) {
     {
       title: 'Create Account Group',
       description: 'Create a new inventory category (account group). Code must be max 10 alphanumeric chars, name max 50 chars.',
-      inputSchema: z.object({
-        code: z.string().describe('Unique category code (max 10 alphanumeric chars, no special chars or spaces)'),
-        name: z.string().describe('Category name (max 50 chars)'),
-      }),
-      annotations: { readOnlyHint: false, destructiveHint: false },
+      inputSchema: accountGroupInputSchema,
+      outputSchema: accountGroupEntityToolOutputSchema,
+      annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: true },
     },
-    async (args) => {
+    async (args, extra) => {
       try {
-        return jsonResult(await client.createAccountGroup(args));
+        return jsonResult(await client.createAccountGroup(args, { signal: extra.signal }));
       } catch (e) {
         return errorResult('siigo_create_account_group', e);
       }
@@ -49,16 +54,13 @@ export function registerAccountGroupTools({ server, client }: ToolContext) {
     {
       title: 'Update Account Group',
       description: 'Update an existing inventory category (account group)',
-      inputSchema: z.object({
-        id: z.number().describe('Account group ID'),
-        code: z.string().describe('Category code'),
-        name: z.string().describe('Category name'),
-      }),
-      annotations: { readOnlyHint: false, destructiveHint: false },
+      inputSchema: accountGroupUpdateInputSchema,
+      outputSchema: accountGroupEntityToolOutputSchema,
+      annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true, openWorldHint: true },
     },
-    async ({ id, code, name }) => {
+    async ({ id, code, name }, extra) => {
       try {
-        return jsonResult(await client.updateAccountGroup(id, { code, name }));
+        return jsonResult(await client.updateAccountGroup(id, { code, name }, { signal: extra.signal }));
       } catch (e) {
         return errorResult('siigo_update_account_group', e);
       }

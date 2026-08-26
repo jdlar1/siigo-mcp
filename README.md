@@ -2,34 +2,35 @@
 
 A Model Context Protocol (MCP) server that provides full integration with the Siigo API, enabling access to Colombian accounting software features including products, customers, invoices, quotations, purchases, credit notes, vouchers, payment receipts, journals, webhooks, and more.
 
-**v3.2.0** - Split tool modules for maintainability, 75 tools, purchase support documents, updated cash receipt support, MCP SDK v1.29, Zod schemas, improved MCP error propagation, and complete TypeScript type safety.
+**v4.0.0** — 71 verified tools, strict current Siigo contracts, Resolution 948 healthcare support, full sales and accounting resources, safe retries/idempotency, MCP cancellation, and public TypeScript/Zod interfaces.
 
 ## Features
 
-This MCP server provides access to all Siigo API endpoints:
+This MCP server covers the current documented Siigo Colombia API surface listed in [the coverage matrix](docs/API_COVERAGE.md). Source conflicts are resolved using the published [source-of-truth policy](docs/SOURCE_OF_TRUTH.md).
+
+It is intentionally broader than [Siigo's official MCP](https://developers.siigo.com/docs/siigoapi/MCP/1-documentation/), whose current documentation lists read operations for products, create/read/update for customers, and create/read for sales invoices. This server covers 15 Siigo resource families through 71 tools, including accounting, purchasing, catalogs, reports, webhooks, and the extended invoice lifecycle.
 
 ### Core Resources
 - **Products**: Full CRUD for products, services, consumer goods, and **Combo** products with components
 - **Customers**: Manage customers, suppliers, and third parties
 - **Invoices**: Sales invoices with electronic invoicing, **healthcare sector**, **batch creation**, annulment, PDF, XML, and DIAN error queries
-- **Quotations**: Full CRUD for quotations (cotizaciones) -- **NEW in v3**
+- **Quotations**: Full CRUD for quotations (cotizaciones)
 - **Purchase Support Documents**: Full CRUD for documentos soporte (`/purchase-support-documents`)
 - **Purchases**: Purchase invoices and expenses
 - **Credit Notes**: Create and query credit notes with PDF support and healthcare sector fields
 - **Vouchers**: Cash receipts (recibos de caja), including debt payments, advance payments, and miscellaneous income
 - **Payment Receipts**: Payment receipts / disbursements (recibos de pago / comprobantes de egreso) - full CRUD
 - **Journals**: Accounting journal entries (comprobantes contables)
-- **Webhooks**: Subscribe to and manage webhook events -- **NEW in v3**
+- **Webhooks**: Subscribe to and manage webhook events
 
 ### Inventory Management
-- **Account Groups**: Create and edit inventory categories -- **NEW in v3**
+- **Account Groups**: Create and edit inventory categories
 
 ### Catalogs
 - Document types (FV, RC, NC, FC, CC, RP, C, DS)
 - Taxes, payment types, cost centers
 - Users/sellers, warehouses, price lists
-- Account groups, cities, ID types
-- Fiscal responsibilities, **fixed assets**, expenses, miscellaneous income concepts
+- Account groups, **fixed assets**, expenses, miscellaneous income concepts
 
 ### Reports
 - Trial balance reports (general and by third party)
@@ -52,8 +53,8 @@ siigo-mcp
 ```bash
 git clone https://github.com/jdlar1/siigo-mcp.git
 cd siigo-mcp
-npm install
-npm run build
+pnpm install
+pnpm build
 cp .env.example .env
 # Edit .env with your Siigo credentials
 ```
@@ -73,10 +74,14 @@ cp .env.example .env
 | Variable | Default | Description |
 |---|---|---|
 | `SIIGO_BASE_URL` | `https://api.siigo.com` | API base URL |
+| `SIIGO_REQUESTS_PER_MINUTE` | `100` | Client-side requests per rolling minute (1-100); set `10` for Siigo test companies |
 | `MCP_TRANSPORT` | `stdio` | MCP transport: `stdio` or stateless Streamable HTTP (`http`) |
 | `MCP_HOST` | `127.0.0.1` | HTTP bind address |
 | `MCP_PORT` | `PORT` or `3000` | HTTP listening port |
 | `MCP_AUTH_TOKEN` | — | Bearer token for HTTP requests; required when binding outside loopback |
+| `MCP_ALLOWED_HOSTS` | — | Optional comma-separated HTTP Host allowlist |
+
+Siigo documents a limit of 100 requests per minute in production and 10 requests per minute for test companies. The client defaults to 100; set `SIIGO_REQUESTS_PER_MINUTE=10` when using a test company. Values outside 1-100 are rejected at startup.
 
 ### Getting Siigo API Credentials
 
@@ -122,14 +127,35 @@ Add to your Claude Desktop config (`claude_desktop_config.json`):
       "env": {
         "SIIGO_USERNAME": "your_username",
         "SIIGO_ACCESS_KEY": "your_access_key",
-        "SIIGO_PARTNER_ID": "your_app_name"
+        "SIIGO_PARTNER_ID": "yourappname"
       }
     }
   }
 }
 ```
 
-## Available Tools (68 total)
+## TypeScript library API
+
+v4 exposes a side-effect-free library entrypoint as well as the executable:
+
+```ts
+import { SiigoClient, type SiigoInvoiceInput } from '@jdlar/siigo-mcp';
+import { invoiceSchemas } from '@jdlar/siigo-mcp/schemas';
+
+const client = new SiigoClient({
+  username: process.env.SIIGO_USERNAME!,
+  accessKey: process.env.SIIGO_ACCESS_KEY!,
+  partnerId: process.env.SIIGO_PARTNER_ID!,
+  baseUrl: 'https://api.siigo.com',
+});
+declare const input: unknown;
+const invoice: SiigoInvoiceInput = invoiceSchemas.invoiceInputSchema.parse(input);
+const created = await client.createInvoice(invoice, { idempotencyKey: 'Invoice2026082601' });
+```
+
+Supported subpath exports are `client`, `contracts`, `server`, `http`, `results`, `schemas`, `types`, and `version`.
+
+## Available Tools (71 total)
 
 ### Products (6 tools)
 | Tool | Description | Annotations |
@@ -200,10 +226,9 @@ Add to your Claude Desktop config (`claude_desktop_config.json`):
 | `siigo_get_voucher` | Get a cash receipt by ID | read-only |
 | `siigo_create_voucher` | Create cash receipt (DebtPayment, AdvancePayment, MiscIncome) | |
 
-### Purchase Support Documents (5 tools)
+### Purchase Support Documents (4 tools)
 | Tool | Description | Annotations |
 |---|---|---|
-| `siigo_get_purchase_support_documents` | List purchase support documents | read-only |
 | `siigo_get_purchase_support_document` | Get a purchase support document by ID | read-only |
 | `siigo_create_purchase_support_document` | Create purchase support document (document type DS) | |
 | `siigo_update_purchase_support_document` | Update a purchase support document | |
@@ -214,7 +239,7 @@ Add to your Claude Desktop config (`claude_desktop_config.json`):
 |---|---|---|
 | `siigo_get_purchases` | List purchase invoices | read-only |
 | `siigo_get_purchase` | Get a purchase by ID | read-only |
-| `siigo_create_purchase` | Create purchase (use FC type with `document_support` for Documento Soporte) | |
+| `siigo_create_purchase` | Create a purchase invoice | |
 | `siigo_update_purchase` | Update a purchase | |
 | `siigo_delete_purchase` | Delete a purchase | destructive |
 
@@ -223,7 +248,7 @@ Add to your Claude Desktop config (`claude_desktop_config.json`):
 |---|---|---|
 | `siigo_get_payment_receipts` | List payment receipts (recibos de pago / comprobantes de egreso) | read-only |
 | `siigo_get_payment_receipt` | Get a payment receipt by ID | read-only |
-| `siigo_create_payment_receipt` | Create payment receipt (DebtPayment, AdvancePayment, Advanced) | |
+| `siigo_create_payment_receipt` | Create payment receipt (DebtPayment, AdvancePayment, Detailed) | |
 | `siigo_update_payment_receipt` | Update a payment receipt | |
 | `siigo_delete_payment_receipt` | Delete a payment receipt | destructive |
 
@@ -242,7 +267,7 @@ Add to your Claude Desktop config (`claude_desktop_config.json`):
 | `siigo_update_webhook` | Update a webhook subscription | |
 | `siigo_delete_webhook` | Delete a webhook subscription | destructive |
 
-### Catalogs (13 tools + account groups above)
+### Catalogs (10 tools + account groups above)
 | Tool | Description |
 |---|---|
 | `siigo_get_document_types` | Document types (FV, RC, NC, FC, CC, RP, C, DS) |
@@ -252,11 +277,8 @@ Add to your Claude Desktop config (`claude_desktop_config.json`):
 | `siigo_get_users` | Users/sellers |
 | `siigo_get_warehouses` | Warehouses |
 | `siigo_get_price_lists` | Price lists (up to 12) |
-| `siigo_get_cities` | Colombian cities |
 | `siigo_get_expenses` | Expenses for cash receipt adjustments |
 | `siigo_get_misc_income` | Miscellaneous income concepts for cash receipts |
-| `siigo_get_id_types` | Identification types |
-| `siigo_get_fiscal_responsibilities` | Fiscal responsibilities |
 | `siigo_get_fixed_assets` | Fixed assets |
 
 ### Reports (3 tools)
@@ -277,6 +299,7 @@ Add to your Claude Desktop config (`claude_desktop_config.json`):
 | `CC` | Comprobante Contable | Accounting Journal | Create + Query |
 | `RP` | Recibo de Pago/Egreso | Payment Receipt | Full CRUD |
 | `C` | Cotizacion | Quotation | Full CRUD |
+| `DS` | Documento Soporte | Purchase Support Document | Full CRUD |
 
 ## Example Usage
 
@@ -335,7 +358,11 @@ Add to your Claude Desktop config (`claude_desktop_config.json`):
       "healthcare_company": {
         "operation_type": "SS-CUFE",
         "period_start": "2026-01-01",
-        "period_end": "2026-01-31"
+        "period_end": "2026-01-31",
+        "payment_method": "04",
+        "service_plan": "16",
+        "contract_number": "CONTRACT-2026-001",
+        "copayment": 150000
       }
     }
   }
@@ -381,11 +408,17 @@ The server handles Siigo API errors and returns structured error responses with 
 ```
 siigo-mcp/
 ├── src/
-│   ├── index.ts          # MCP server - tool registration with Zod schemas
+│   ├── cli.ts            # stdio / HTTP executable entrypoint
+│   ├── index.ts          # side-effect-free public library exports
 │   ├── mcp-server.ts     # MCP server factory and tool registration
 │   ├── http-server.ts    # Stateless Streamable HTTP application
 │   ├── siigo-client.ts   # HTTP client for all Siigo API endpoints
-│   └── types.ts          # Full TypeScript interfaces for all document types
+│   ├── contracts.ts      # exact inferred request contract types
+│   ├── schemas/          # strict Zod API contracts
+│   ├── tools/            # resource-specific MCP registrations
+│   └── types.ts          # Siigo response and shared interfaces
+├── docs/                 # source policy and API coverage matrix
+├── test/                 # compiled-output Jest contract tests
 ├── dist/                 # Compiled output (ESM)
 ├── package.json
 ├── tsconfig.json
@@ -396,13 +429,13 @@ siigo-mcp/
 ### Building
 
 ```bash
-npm run build
+pnpm build
 ```
 
 ### Running for Development
 
 ```bash
-npm run dev
+pnpm dev
 ```
 
 ## Contributing
@@ -410,7 +443,7 @@ npm run dev
 1. Fork the repository
 2. Create a feature branch
 3. Make your changes
-4. Run `npm run build` to verify
+4. Run `pnpm lint && pnpm test` to verify
 5. Submit a pull request
 
 ## License
@@ -424,7 +457,8 @@ MIT License
 
 ## Links
 
-- [Siigo API Documentation](https://siigoapi.docs.apiary.io/)
+- [Current Siigo API Documentation](https://developers.siigo.com/docs/siigoapi/)
+- [Siigo Apiary Blueprint](https://siigoapi.docs.apiary.io/)
 - [Model Context Protocol](https://modelcontextprotocol.io/)
 - [MCP TypeScript SDK](https://www.npmjs.com/package/@modelcontextprotocol/sdk)
 - [Siigo Official Website](https://siigo.com/)

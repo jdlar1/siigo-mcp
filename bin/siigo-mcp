@@ -1,10 +1,8 @@
 #!/usr/bin/env node
 
-// This is a simple shim to launch the compiled MCP server.
-// It must use dynamic import since the package is ESM.
-const { join } = require('path');
-const serverPath = join(__dirname, '..', 'dist', 'index.js');
-import(serverPath).catch((error) => {
-  console.error('Failed to start Siigo MCP server:', error);
-  process.exit(1);
-});
+void import('../dist/cli.js')
+  .then(({ main }) => main())
+  .catch((error) => {
+    console.error('Failed to start Siigo MCP server:', error instanceof Error ? error.message : String(error));
+    process.exitCode = 1;
+  });

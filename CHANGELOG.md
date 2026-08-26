@@ -5,6 +5,38 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [4.0.0] - 2026-08-26
+
+### Breaking changes
+
+- Replaced permissive, ad hoc MCP payload objects with strict endpoint schemas. Unknown fields and invalid cross-field combinations now fail locally before a request reaches Siigo.
+- Adopted the current Resolution 948 healthcare wire contract: `non_contract_invoice_reason` is a string code (`01`-`07`), payment methods are `01`-`04`, service plans are `02`-`17`, and `contract_number` allows 64 characters with the documented mutual exclusions.
+- Product, customer, invoice, and quotation updates now require their complete replacement payloads instead of accepting misleading partial objects.
+- Removed the undocumented `siigo_get_cities`, `siigo_get_id_types`, and `siigo_get_fiscal_responsibilities` tools. Their inferred routes are absent from the current Siigo resource reference and did not resolve on the deployed gateway.
+- Removed the unverified `siigo_get_purchase_support_documents` collection tool and client method. The current reference and blueprint establish only get-by-ID, create, update, and delete support-document operations.
+- Client methods now return endpoint-specific entities, arrays, paginated lists, or report responses instead of the broad `SiigoApiResponse<T>` union. The legacy type remains exported as deprecated for migration.
+
+### Added
+
+- Added complete strict request schemas and concrete endpoint-specific MCP result schemas for all 71 supported tools across sales, purchasing, cash, accounting, catalogs, reports, and webhooks.
+- Added all documented list filters, full invoice/quotation/product/customer fields, current cash-receipt discriminated payloads, detailed payment receipts, supplier purchase fields, support-document fields, journal item variants, and report filters.
+- Added `Idempotency-Key` support for invoices, credit notes, vouchers, and journals, matching Siigo's documented idempotent POST operations.
+- Added MCP cancellation propagation, shared authentication for concurrent requests, proactive token refresh, the documented per-company request limit, and bounded retries for safe or explicitly idempotent requests.
+- Added side-effect-free package exports for the client, server, HTTP adapter, results, types, and version metadata.
+- Added a source precedence policy and conflict log in `docs/SOURCE_OF_TRUTH.md`, plus a refreshed snapshot of the downloadable Siigo Apiary blueprint.
+- Added structured MCP results alongside text content and release-level architecture/contract tests.
+- Added `MCP_ALLOWED_HOSTS` support for HTTP deployments.
+
+### Fixed
+
+- Corrected the miscellaneous-income catalog route from `/v1/misc-income` to `/v1/misc-incomes`.
+- Kept the current voucher discount catalog at `/v1/expenses` instead of copying the singular typo from the downloadable blueprint.
+- Fixed the npm executable for ESM packages and moved startup side effects out of the public library entrypoint.
+- Required authentication whenever the HTTP server binds to a non-loopback host and bounded API error details returned to MCP clients.
+- Propagated Siigo's structured uppercase and lowercase error arrays without leaking unbounded upstream payloads.
+- Fixed decimal-place validation so valid values such as `0.07` and `10.12` are not rejected by JavaScript floating-point rounding.
+- Kept empty local product and customer search results compatible with the declared pagination response schema.
+
 ## [3.2.0] - 2026-05-05
 
 ### Added

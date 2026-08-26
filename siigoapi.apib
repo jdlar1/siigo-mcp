@@ -23,6 +23,18 @@ Tendrás acceso a los siguientes recursos:
 
 # Novedades
 
+## Ajustes normativos en la facuración del sector salud de la resolución 948
+
+Debido a ajustes normativos del sector salud en Siigo Nube y API, se realizaron ajustes en las facturas y notas crédito para cumplir con la nueva normativa.
+Entre los ajustes encontraras las siguientes novedades:
+ 1- Ajuste en los campos de contract_number, service_plan y payment_method.
+ 2- Manejo del campo CUCON para incluirlo en cada tercero.
+ 3- Nuevo campo de factura sin contrato - nonContractInvoiceReason
+
+ Encuentra mayor información de las peticiones en la sección <a href="https://siigoapi.docs.apiary.io/#reference/facturas-de-venta">**Factura de venta**</a>.
+
+Los cambios en facturas de venta estara listo para el  01 de Julio del 2026,  los cambios en notas crédito se espera confirmación de fecha de despliegue.
+
 ## Ajustes en los recibos de caja
 
 Debido a ajustes realizados en Siigo Nube en los recibos de caja, se ajustaron los request de los recibos de caja en Siigo API. 
@@ -575,6 +587,10 @@ Puedes enviar a la DIAN y por mail tus facturas de venta desde su creación en S
 + expires_in: 86400 (number) - Expiración en milisegundos
 + token_type: Bearer (string) - Tipo de Token
 + scope: SiigoAPI (string) - Alcance
+
+## Expenses (object)
++ id: 13156 (number) - Identificador único del descuento.
++ name: Ajuste al peso (string) - Nombre del descuento.
 
 ## Fixedassets (object)
 + id: 13156 (number,required) - Identificador único del activo fijo.
@@ -2593,6 +2609,9 @@ Nombre                   |Tipo                   |Descripción  |Característica
 **comments**          |string                 | Observaciones o comentarios adicionales.  | Campo opcional, alfanúmerico,  permite espacios y carácteres especiales,  máximo  4000 carácteres.
 **seller_id**         |number                | Usuario vendedor asigando al cliente.   | Campo opcional, númerico, el id del usuario debe existir previamente en Siigo Nube, se puede consultar con una petición tipo GET  al endpoint de https://api.siigo.com/v1/users.
 **collector_id**      |number                | Usuario cobrador encargado del recaudo de cartera.  | Campo opcional, númerico, el id del usuario debe existir previamente en Siigo Nube, se puede consultar con una petición tipo GET  al endpoint de https://api.siigo.com/v1/users.
+**additional_fields.CUCON**      |string                | Campo adicional para ingresar el Código Único de Contrato de los terceros del sector salud.  | Campo opcional, alfanúmerico de 64 caracteres determinado por el SIIFA.
+
+
 
 **[¿Como crear  terceros en Siigo Nube?](https://siigonube.portaldeclientes.siigo.com/basedeconocimiento/creacion-terceros-clientes-proveedores/)**
 
@@ -3036,6 +3055,7 @@ Nombre                      |Tipo          |Descripción     |  Características
 
 A partir del 22 de Julio de 2025, se podrán enviar distintos tipos de operación para las facturas de venta y notas crédito del sector salud.
 
+
 Permite enviar los campos requeridos en facturación electronica para empresas del sector salud, detalle de los campos:
 
 
@@ -3047,13 +3067,24 @@ Nombre                      |Tipo          |Descripción     |  Características
 **healthcare_company.payment_method**   |*number*                 | Modalidad de pago   |   Campo opcional, solo se usa en operaciones de tipo "SS-CUFE", "SS-SinAporte", debe enviar el ID valido del listado de valores que se encuentra en la parte inferior.
 **healthcare_company.service_plan**   |*number*                 | Cobertura - Plan servicios  |   Campo opcional, solo se usa en operaciones de tipo "SS-CUFE", "SS-SinAporte", debe enviar el ID valido del listado de valores que se encuentra ne la parte inferior.
 **healthcare_company.policy_number**        |*string*                 | Número de poliza   | Campo opcional, solo se usa en operaciones de tipo "SS-CUFE", "SS-SinAporte", alfanúmerico, de máximo 50 caracteres.
-**healthcare_company.contract_number**        |*string*                 | Número de contrato   | Campo opcional, solo se usa en operaciones de tipo "SS-CUFE", "SS-SinAporte", alfanúmerico, de máximo 50 caracteres.
+**healthcare_company.contract_number**        |*string*                 | Número de contrato   | Campo opcional, solo se usa en operaciones de tipo "SS-CUFE", "SS-SinAporte", alfanúmerico, permite caracteres especiales, de máximo 64 caracteres. Si se envia este campo no se puede enviar el campo de policy_number ni nonContractInvoiceReason.
 **healthcare_company.copayment**   |*number*                 | Copago  |   Campo opcional, solo se usa en operaciones de tipo "SS-CUFE", Campo númerico de 12 dígitos, 10 entero y 2 decimales, debe ser un valor positivo, sin símbolos ni separadores de miles y con el signo punto como separador de decimales.
 **healthcare_company.coinsurance**   |*number*                 | Cuota moderadora   |  Campo opcional, solo se usa en operaciones de tipo "SS-CUFE", Campo númerico de 12 dígitos, 10 entero y 2 decimales, debe ser un valor positivo, sin símbolos ni separadores de miles y con el signo punto como separador de decimales.
 **healthcare_company.cost_sharing**   |*number*                 | Pagos compartidos   |   Campo opcional, solo se usa en operaciones de tipo "SS-CUFE", Campo númerico de 12 dígitos, 10 entero y 2 decimales, debe ser un valor positivo, sin símbolos ni separadores de miles y con el signo punto como separador de decimales.
 **healthcare_company.recovery_charge**   |*number*                 | Cuota de recuperación   |   Campo opcional, solo se usa en operaciones de tipo "SS-CUFE", Campo númerico de 12 dígitos, 10 entero y 2 decimales, debe ser un valor positivo, sin símbolos ni separadores de miles y con el signo punto como separador de decimales.
+**healthcare_company.nonContractInvoiceReason**   |*number*                 | Cuota de recuperación   |   Campo opcional, solo se usa en operaciones de tipo "SS-CUFE", Campo númerico de 12 dígitos, 10 entero y 2 decimales, debe ser un valor positivo, sin símbolos ni separadores de miles y con el signo punto como separador de decimales.
 
 *Para las facturas de venta con el tipo de operación "SS-CUFE" se debe enviar al menos uno de los 4 campos de recaudo diligenciados ("copayment", "coinsurance", "cost_sharing", "recovery_charge")*
+
+**Cambios en los campos del sector salud de la resolución 948 :**
+Acontinuación encontraras el listado de los cambios efectuados en los campos de la facturación del sector salud que comienzan a regir a aprtir del 01 de Julio del 2026:
+1- Se elimina la opción "05" del listado de  payment_method de Otra modalidad (específica)
+2- Se elimina la opción "01" del listado de  service_plan de Plan de beneficios en salud financiado con UPC
+3- Se agregan las opciones "16" y "17"  al listado de  service_plan de Plan de Plan de beneficios en salud financiado con UPC Régimen Contributivo y Subsidiado
+4- Se incluye el campo de nonContractInvoiceReason para facturas sin contrato para seleccionar una de las 6 opciones determinadas, es obligatorio si no se envia el campo de contract_number.
+5- Si envia el campo contract_number no puede enviar los campos nonContractInvoiceReason ni policy_number.
+6- Si envia el campo policy_number no puede enviar el campo contract_number y debe enviar obligatoriamente el campo de nonContractInvoiceReason.
+7- Se incluye en la creación de terceros el campo CUCON para registrar el Código Único de Contrato que es alfanúmerico de 64 caracteres generado por el SIIFA. Para Los fabricantes, importadores y titulares de registro sanitario que realicen ventas masivas de medicamentos, dispositivos o insumos a las Entidades Promotoras de Salud (EPS). Para este caso no genera una factura sin marca del sector salud y debe informar el CUCON para incluirlo en el XML.
 
 **Listado de valores del campo "payment_method":**
 
@@ -3063,13 +3094,11 @@ Número                     | Descripción
 02 | Pago global prospectivo.
 03 | Pago por capitación.
 04 | Pago por evento.
-05 | Otra modalidad (específica)
 
 **Listado de valores del campo "service_plan":** 
 
 Número                     | Descripción  
 ----------------------------|---------
-01 | Plan de beneficios en salud financiado con UPC
 02 | Presupuesto máximo 
 03 | Prima EPS / EOC, no asegurados SOAT
 04 | Cobertura Póliza SOAT 
@@ -3084,7 +3113,20 @@ Número                     | Descripción
 13 | Cobertura Régimen Especial o Excepción
 14 | Cobertura Fondo Nacional de Salud de las Personas Privadas de la Libertad
 15 | Particular
+16 | Plan de beneficios en salud financiado con UPC Régimen Contributivo
+17 | Plan de beneficios en salud financiado con UPC Régimen Subsidiado
 
+
+**Listado de valores del campo "nonContractInvoiceReason":**
+
+Número                     | Descripción
+----------------------------|---------
+01 | Atención de urgencias.
+02 | Atención a cargo de ADRES, Aseguradoras SOAT, Planes voluntarios de Salud.
+03 | Atención en salud por fallos de tutela/órdenes judiciales.
+04 | Atención en salud por Portabilidad o en los casos de asignación masiva de afiliados - artículo 2.5.3.4.7.9 del Decreto 780/2016
+05 | Atención en salud en casos excepcionales por cotizaciones o autorizaciones sin contrato.
+06 | Gestión recuperación de órganos para trasplante.
 
 * **Json de ejemplo de campos del sector salud para el tipo SS-CUFE** 
                    
@@ -3095,7 +3137,6 @@ Número                     | Descripción
             "period_end": "2024-03-16",
             "payment_method": "04",
             "service_plan": "01",
-            "policy_number": "ZAS321456677",
             "contract_number": "CON1245636",
             "copayment": 22505.20,
             "coinsurance": 10805.20,
@@ -3113,7 +3154,7 @@ Número                     | Descripción
             "payment_method": "04",
             "service_plan": "01",
             "policy_number": "ZAS321456677",
-            "contract_number": "CON1245636"
+            "nonContractInvoiceReason": "03"
           }
            
 
@@ -4087,24 +4128,35 @@ Nombre                      |Tipo          |Descripción     |  Características
 
 A partir del 22 de Julio de 2025, se podrán enviar distintos tipos de operación para las facturas de venta y notas crédito del sector salud.
 
-Permite enviar los campos requeridos para realizar una nota crédito a una factura de venta del sector salud, detalle de los campos:
+Permite enviar los campos requeridos en facturación electronica para empresas del sector salud, detalle de los campos:
 
 
 Nombre                      |Tipo          |Descripción     |  Características
 ----------------------------|--------------|------------------ |----------------
-**healthcare_company.operation_type**           |*string*                 | Tipo de operación  |   Campo obligatorio, Debe ser el mismo tipo de operación que tenía la factura de venta a la que se aplica la nota crédito ("SS-CUFE", "SS-SinAporte" o "SS-Recaudo") según corresponda.
+**healthcare_company.operation_type**           |*string*                 | Tipo de operación  |   Campo obligatorio para facturas del sector de salud, puede contener los valores "SS-CUFE", "SS-SinAporte" o "SS-Recaudo"
 **healthcare_company.period_start**           |*date*                 | Periodo de facturación inicio  |   Campo obligatorio si el tipo de operación es "SS-CUFE" o "SS-SinAporte" , debe ir en formato AAAA-MM-DD
 **healthcare_company.period_end**           |*date*                 | Periodo de facturación final   |   Campo obligatorio si el tipo de operación es "SS-CUFE" o "SS-SinAporte", debe ir en formato AAAA-MM-DD
 **healthcare_company.payment_method**   |*number*                 | Modalidad de pago   |   Campo opcional, solo se usa en operaciones de tipo "SS-CUFE", "SS-SinAporte", debe enviar el ID valido del listado de valores que se encuentra en la parte inferior.
 **healthcare_company.service_plan**   |*number*                 | Cobertura - Plan servicios  |   Campo opcional, solo se usa en operaciones de tipo "SS-CUFE", "SS-SinAporte", debe enviar el ID valido del listado de valores que se encuentra ne la parte inferior.
 **healthcare_company.policy_number**        |*string*                 | Número de poliza   | Campo opcional, solo se usa en operaciones de tipo "SS-CUFE", "SS-SinAporte", alfanúmerico, de máximo 50 caracteres.
-**healthcare_company.contract_number**        |*string*                 | Número de contrato   | Campo opcional, solo se usa en operaciones de tipo "SS-CUFE", "SS-SinAporte", alfanúmerico, de máximo 50 caracteres.
+**healthcare_company.contract_number**        |*string*                 | Número de contrato   | Campo opcional, solo se usa en operaciones de tipo "SS-CUFE", "SS-SinAporte", alfanúmerico, permite caracteres especiales, de máximo 64 caracteres. Si se envia este campo no se puede enviar el campo de policy_number ni nonContractInvoiceReason.
 **healthcare_company.copayment**   |*number*                 | Copago  |   Campo opcional, solo se usa en operaciones de tipo "SS-CUFE", Campo númerico de 12 dígitos, 10 entero y 2 decimales, debe ser un valor positivo, sin símbolos ni separadores de miles y con el signo punto como separador de decimales.
 **healthcare_company.coinsurance**   |*number*                 | Cuota moderadora   |  Campo opcional, solo se usa en operaciones de tipo "SS-CUFE", Campo númerico de 12 dígitos, 10 entero y 2 decimales, debe ser un valor positivo, sin símbolos ni separadores de miles y con el signo punto como separador de decimales.
 **healthcare_company.cost_sharing**   |*number*                 | Pagos compartidos   |   Campo opcional, solo se usa en operaciones de tipo "SS-CUFE", Campo númerico de 12 dígitos, 10 entero y 2 decimales, debe ser un valor positivo, sin símbolos ni separadores de miles y con el signo punto como separador de decimales.
 **healthcare_company.recovery_charge**   |*number*                 | Cuota de recuperación   |   Campo opcional, solo se usa en operaciones de tipo "SS-CUFE", Campo númerico de 12 dígitos, 10 entero y 2 decimales, debe ser un valor positivo, sin símbolos ni separadores de miles y con el signo punto como separador de decimales.
+**healthcare_company.nonContractInvoiceReason**   |*number*                 | Cuota de recuperación   |   Campo opcional, solo se usa en operaciones de tipo "SS-CUFE", Campo númerico de 12 dígitos, 10 entero y 2 decimales, debe ser un valor positivo, sin símbolos ni separadores de miles y con el signo punto como separador de decimales.
 
-*Para las notas crédito con el tipo de operación "SS-CUFE" se debe enviar al menos uno de los 4 campos de recaudo diligenciados ("copayment", "coinsurance", "cost_sharing", "recovery_charge")*
+*Para las facturas de venta con el tipo de operación "SS-CUFE" se debe enviar al menos uno de los 4 campos de recaudo diligenciados ("copayment", "coinsurance", "cost_sharing", "recovery_charge")*
+
+**Cambios en los campos del sector salud de la resolución 948 :**
+Acontinuación encontraras el listado de los cambios efectuados en los campos de la facturación del sector salud que comienzan a regir a aprtir del 01 de Julio del 2026:
+1- Se elimina la opción "05" del listado de  payment_method de Otra modalidad (específica)
+2- Se elimina la opción "01" del listado de  service_plan de Plan de beneficios en salud financiado con UPC
+3- Se agregan las opciones "16" y "17"  al listado de  service_plan de Plan de Plan de beneficios en salud financiado con UPC Régimen Contributivo y Subsidiado
+4- Se incluye el campo de nonContractInvoiceReason para facturas sin contrato para seleccionar una de las 6 opciones determinadas, es obligatorio si no se envia el campo de contract_number.
+5- Si envia el campo contract_number no puede enviar los campos nonContractInvoiceReason ni policy_number.
+6- Si envia el campo policy_number no puede enviar el campo contract_number y debe enviar obligatoriamente el campo de nonContractInvoiceReason.
+7- Se incluye en la creación de terceros el campo CUCON para registrar el Código Único de Contrato que es alfanúmerico de 64 caracteres generado por el SIIFA. Para Los fabricantes, importadores y titulares de registro sanitario que realicen ventas masivas de medicamentos, dispositivos o insumos a las Entidades Promotoras de Salud (EPS). Para este caso no genera una factura sin marca del sector salud y debe informar el CUCON para incluirlo en el XML.
 
 **Listado de valores del campo "payment_method":**
 
@@ -4114,13 +4166,11 @@ Número                     | Descripción
 02 | Pago global prospectivo.
 03 | Pago por capitación.
 04 | Pago por evento.
-05 | Otra modalidad (específica)
 
 **Listado de valores del campo "service_plan":** 
 
 Número                     | Descripción  
 ----------------------------|---------
-01 | Plan de beneficios en salud financiado con UPC
 02 | Presupuesto máximo 
 03 | Prima EPS / EOC, no asegurados SOAT
 04 | Cobertura Póliza SOAT 
@@ -4135,7 +4185,20 @@ Número                     | Descripción
 13 | Cobertura Régimen Especial o Excepción
 14 | Cobertura Fondo Nacional de Salud de las Personas Privadas de la Libertad
 15 | Particular
+16 | Plan de beneficios en salud financiado con UPC Régimen Contributivo
+17 | Plan de beneficios en salud financiado con UPC Régimen Subsidiado
 
+
+**Listado de valores del campo "nonContractInvoiceReason":**
+
+Número                     | Descripción
+----------------------------|---------
+01 | Atención de urgencias.
+02 | Atención a cargo de ADRES, Aseguradoras SOAT, Planes voluntarios de Salud.
+03 | Atención en salud por fallos de tutela/órdenes judiciales.
+04 | Atención en salud por Portabilidad o en los casos de asignación masiva de afiliados - artículo 2.5.3.4.7.9 del Decreto 780/2016
+05 | Atención en salud en casos excepcionales por cotizaciones o autorizaciones sin contrato.
+06 | Gestión recuperación de órganos para trasplante
 
 * **Json de ejemplo de campos del sector salud para el tipo SS-CUFE** 
                    
@@ -4164,7 +4227,7 @@ Número                     | Descripción
             "payment_method": "04",
             "service_plan": "01",
             "policy_number": "ZAS321456677",
-            "contract_number": "CON1245636"
+            "nonContractInvoiceReason": "03"
           }
            
 
@@ -5804,6 +5867,28 @@ active          |*boolean*                     | Estado del centro de costo.
 
     + Body
 
+## Descuentos en recibos de caja [GET /v1/expense]
+Este endpoint te permite consultar todos descuentos creados en Siigo Nube. Se utilizan para relacionar en los recibos de caja de tipo Abono a una deuda.
+
+**Datos que encontrarás en el response:**
+Nombre          |Tipo                          |Descripción
+----------------|------------------------------|---------------
+id              |*number*                      | Identificador del descuento.
+name            |*string*                      | Nombre del descuento.
+
++ Request (application/json)
+
+    + Headers
+
+            Authorization: [access_token]
+            Partner-Id: [nombre de la aplicación que estás integrando]
+
++ Response 200 (application/json)
+
+    + Attributes (Expenses)
+
+    + Body
+
 
 ## Activos Fijos [GET /v1/fixed-assets]
 Este endpoint te permite consultar todos los activos fijos creados en Siigo Nube. Se utilizan en los comprobantes contable para subir saldos o modificar los activos fijos.
@@ -6026,4 +6111,3 @@ SDK implementado en Javascript como paquete de NPM. Toda la documentación relac
 Demo: https://demo-sdk-javascriipt.herokuapp.com/
 
 Github: https://github.com/SiigoSAS/siigo_client_sdk_javascript 
-

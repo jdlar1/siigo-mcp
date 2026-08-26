@@ -1,0 +1,15 @@
+export * as accountGroupSchemas from './account-groups.js';
+export * as catalogSchemas from './catalogs.js';
+export * as commonSchemas from './common.js';
+export * as creditNoteSchemas from './credit-notes.js';
+export * as customerSchemas from './customers.js';
+export * as invoiceSchemas from './invoices.js';
+export * as journalSchemas from './journals.js';
+export * as paymentReceiptSchemas from './payment-receipts.js';
+export * as productSchemas from './products.js';
+export * as supportDocumentSchemas from './purchase-support-documents.js';
+export * as purchaseSchemas from './purchases.js';
+export * as quotationSchemas from './quotations.js';
+export * as reportSchemas from './reports.js';
+export * as voucherSchemas from './vouchers.js';
+export * as webhookSchemas from './webhooks.js';

@@ -14,12 +14,13 @@ import { registerQuotationTools } from './tools/quotations.js';
 import { registerReportTools } from './tools/reports.js';
 import { registerVoucherTools } from './tools/vouchers.js';
 import { registerWebhookTools } from './tools/webhooks.js';
+import { PACKAGE_NAME, PACKAGE_VERSION } from './version.js';
 
 export function createMcpServer(client: SiigoClient): McpServer {
   const server = new McpServer(
     {
-      name: '@jdlar/siigo-mcp',
-      version: '3.2.0',
+      name: PACKAGE_NAME,
+      version: PACKAGE_VERSION,
     },
     {
       capabilities: {

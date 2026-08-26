@@ -5,8 +5,15 @@ import type { SiigoClient } from './siigo-client.js';
 
 export interface HttpServerOptions {
   client: SiigoClient;
-  host: string;
+  host?: string;
   authToken?: string;
+  allowedHosts?: string[];
+}
+
+const LOOPBACK_HOSTS = new Set(['127.0.0.1', 'localhost', '::1', '[::1]']);
+
+function isLoopbackHost(host: string): boolean {
+  return LOOPBACK_HOSTS.has(host.toLowerCase());
 }
 
 function unauthorizedResult() {
@@ -31,8 +38,12 @@ function methodNotAllowedResult() {
   };
 }
 
-export function createHttpApp({ client, host, authToken }: HttpServerOptions) {
-  const app = createMcpExpressApp({ host });
+export function createHttpApp({ client, host = '127.0.0.1', authToken, allowedHosts }: HttpServerOptions) {
+  if (!isLoopbackHost(host) && !authToken) {
+    throw new Error('authToken is required when the MCP HTTP server binds to a non-loopback host');
+  }
+
+  const app = createMcpExpressApp({ host, ...(allowedHosts ? { allowedHosts } : {}) });
 
   app.use('/mcp', (req, res, next) => {
     if (authToken && req.headers.authorization !== `Bearer ${authToken}`) {

@@ -16,7 +16,7 @@ jest.unstable_mockModule('axios', () => ({
   default: mockAxios,
 }));
 
-const { SiigoApiError, SiigoClient } = await import('../dist/siigo-client.js');
+const { SiigoApiError, SiigoClient, validateRequestsPerMinute } = await import('../dist/siigo-client.js');
 
 describe('SiigoClient', () => {
   beforeEach(() => {
@@ -25,6 +25,23 @@ describe('SiigoClient', () => {
     mockAxiosInstance.defaults.headers.common = {};
     mockAxiosInstance.post.mockReset();
     mockAxiosInstance.request.mockReset();
+  });
+
+  test('uses the production request budget by default and validates overrides', () => {
+    const config = {
+      username: 'user',
+      accessKey: 'key',
+      baseUrl: 'https://api.siigo.com',
+      partnerId: 'partner',
+    };
+
+    expect(validateRequestsPerMinute(undefined)).toBe(100);
+    expect(validateRequestsPerMinute(10)).toBe(10);
+    expect(new SiigoClient(config).requestsPerMinute).toBe(100);
+    expect(new SiigoClient({ ...config, requestsPerMinute: 10 }).requestsPerMinute).toBe(10);
+    expect(() => validateRequestsPerMinute(0)).toThrow('between 1 and 100');
+    expect(() => validateRequestsPerMinute(101)).toThrow('between 1 and 100');
+    expect(() => new SiigoClient({ ...config, requestsPerMinute: 1.5 })).toThrow('between 1 and 100');
   });
 
   test('throws SiigoApiError when the API returns an error payload', async () => {
@@ -72,7 +89,7 @@ describe('SiigoClient', () => {
     expect(thrownError).toBeInstanceOf(SiigoApiError);
   });
 
-  test('uses the webhook id in the update endpoint path', async () => {
+  test('uses the documented collection route for webhook updates', async () => {
     mockAxiosInstance.post.mockResolvedValue({
       data: {
         access_token: 'token',
@@ -97,10 +114,45 @@ describe('SiigoClient', () => {
     expect(mockAxiosInstance.request).toHaveBeenCalledWith(
       expect.objectContaining({
         method: 'PUT',
-        url: '/v1/webhooks/wh_123',
+        url: '/v1/webhooks',
         data: { active: false },
       }),
     );
+  });
+
+  test('falls back to the legacy webhook id route only after a documented-route miss', async () => {
+    mockAxiosInstance.post.mockResolvedValue({
+      data: {
+        access_token: 'token',
+        expires_in: 3600,
+        token_type: 'Bearer',
+        scope: '*',
+      },
+    });
+    mockAxiosInstance.request
+      .mockRejectedValueOnce({
+        isAxiosError: true,
+        message: 'Not found',
+        response: { status: 404, data: { Errors: [{ Message: 'Not found' }] } },
+      })
+      .mockResolvedValueOnce({ data: { id: 'wh_123', active: false } });
+
+    const client = new SiigoClient({
+      username: 'user',
+      accessKey: 'key',
+      baseUrl: 'https://api.siigo.com',
+      partnerId: 'partner',
+    });
+
+    await client.updateWebhook('wh_123', {
+      application_id: 'Example',
+      topic: 'public.siigoapi.products.update',
+      url: 'https://example.test/webhook',
+      active: false,
+    });
+
+    expect(mockAxiosInstance.request).toHaveBeenNthCalledWith(1, expect.objectContaining({ url: '/v1/webhooks' }));
+    expect(mockAxiosInstance.request).toHaveBeenNthCalledWith(2, expect.objectContaining({ url: '/v1/webhooks/wh_123' }));
   });
 
   test('searchProducts scans later pages before filtering partial matches', async () => {
@@ -218,6 +270,43 @@ describe('SiigoClient', () => {
         url: '/v1/customers',
       }),
     );
+  });
+
+  test('keeps pagination output valid when local searches have no matches', async () => {
+    mockAxiosInstance.post.mockResolvedValue({
+      data: {
+        access_token: 'token',
+        expires_in: 3600,
+        token_type: 'Bearer',
+        scope: '*',
+      },
+    });
+    mockAxiosInstance.request
+      .mockResolvedValueOnce({
+        data: {
+          results: [{ code: 'A1', name: 'Alpha' }],
+          pagination: { page: 1, page_size: 100, total_results: 1 },
+        },
+      })
+      .mockResolvedValueOnce({
+        data: {
+          results: [{ identification: '1', name: ['Alice'] }],
+          pagination: { page: 1, page_size: 100, total_results: 1 },
+        },
+      });
+
+    const client = new SiigoClient({
+      username: 'user',
+      accessKey: 'key',
+      baseUrl: 'https://api.siigo.com',
+      partnerId: 'partner',
+    });
+
+    const products = await client.searchProducts({ name: 'missing' });
+    const customers = await client.searchCustomers({ name: 'missing' });
+
+    expect(products).toMatchObject({ results: [], pagination: { page_size: 1, total_results: 0 } });
+    expect(customers).toMatchObject({ results: [], pagination: { page_size: 1, total_results: 0 } });
   });
 
   test('creates purchase support documents through the documented endpoint', async () => {
@@ -347,7 +436,45 @@ describe('SiigoClient', () => {
       2,
       expect.objectContaining({
         method: 'GET',
-        url: '/v1/misc-income',
+        url: '/v1/misc-incomes',
+      }),
+    );
+  });
+
+  test('routes miscellaneous-income vouchers through the documented query variant', async () => {
+    mockAxiosInstance.post.mockResolvedValue({
+      data: {
+        access_token: 'token',
+        expires_in: 3600,
+        token_type: 'Bearer',
+        scope: '*',
+      },
+    });
+    mockAxiosInstance.request.mockResolvedValue({ data: { id: 'voucher_123' } });
+
+    const client = new SiigoClient({
+      username: 'user',
+      accessKey: 'key',
+      baseUrl: 'https://api.siigo.com',
+      partnerId: 'partner',
+    });
+
+    const voucher = {
+      document: { id: 1 },
+      date: '2026-08-26',
+      type: 'MiscIncome',
+      customer: { identification: '900123456' },
+      income: { id: 2 },
+      payment: { id: 3, value: 100 },
+    };
+    await client.createMiscIncomeVoucher(voucher);
+
+    expect(mockAxiosInstance.request).toHaveBeenCalledWith(
+      expect.objectContaining({
+        method: 'POST',
+        url: '/v1/vouchers',
+        params: { type: 'MiscIncome' },
+        data: voucher,
       }),
     );
   });

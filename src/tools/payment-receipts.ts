@@ -1,28 +1,58 @@
-import { z } from 'zod';
 import { errorResult, jsonResult } from '../mcp-results.js';
+import {
+  paymentReceiptCreateToolSchema,
+  paymentReceiptDeleteToolOutputSchema,
+  paymentReceiptEntityToolOutputSchema,
+  paymentReceiptIdInputSchema,
+  paymentReceiptListQuerySchema,
+  paymentReceiptListToolOutputSchema,
+  paymentReceiptUpdateToolSchema,
+} from '../schemas/payment-receipts.js';
 import type { ToolContext } from '../tool-context.js';
 
-export function registerPaymentReceiptTools({ server, client }: ToolContext) {
-  // ═══════════════════════════════════════════════════════════════════════════
-  // PAYMENT RECEIPTS - Recibos de Pago / Comprobantes de Egreso (5 tools)
-  // ═══════════════════════════════════════════════════════════════════════════
+const readAnnotations = {
+  readOnlyHint: true,
+  destructiveHint: false,
+  idempotentHint: true,
+  openWorldHint: true,
+} as const;
 
+const createAnnotations = {
+  readOnlyHint: false,
+  destructiveHint: false,
+  idempotentHint: false,
+  openWorldHint: true,
+} as const;
+
+const updateAnnotations = {
+  readOnlyHint: false,
+  destructiveHint: false,
+  idempotentHint: true,
+  openWorldHint: true,
+} as const;
+
+const deleteAnnotations = {
+  readOnlyHint: false,
+  destructiveHint: true,
+  idempotentHint: true,
+  openWorldHint: true,
+} as const;
+
+export function registerPaymentReceiptTools({ server, client }: ToolContext) {
   server.registerTool(
     'siigo_get_payment_receipts',
     {
       title: 'Get Payment Receipts',
-      description: 'Get list of payment receipts / disbursements (recibos de pago / comprobantes de egreso) from Siigo',
-      inputSchema: z.object({
-        page: z.number().optional().describe('Page number'),
-        page_size: z.number().optional().describe('Number of items per page'),
-      }),
-      annotations: { readOnlyHint: true, destructiveHint: false },
+      description: 'Get payment receipts with creation, update, and pagination filters from Siigo.',
+      inputSchema: paymentReceiptListQuerySchema,
+      outputSchema: paymentReceiptListToolOutputSchema,
+      annotations: readAnnotations,
     },
-    async (args) => {
+    async (args, extra) => {
       try {
-        return jsonResult(await client.getPaymentReceipts(args));
-      } catch (e) {
-        return errorResult('siigo_get_payment_receipts', e);
+        return jsonResult(await client.getPaymentReceipts(args, { signal: extra.signal }));
+      } catch (error) {
+        return errorResult('siigo_get_payment_receipts', error);
       }
     },
   );
@@ -31,17 +61,16 @@ export function registerPaymentReceiptTools({ server, client }: ToolContext) {
     'siigo_get_payment_receipt',
     {
       title: 'Get Payment Receipt',
-      description: 'Get a specific payment receipt by ID',
-      inputSchema: z.object({
-        id: z.string().describe('Payment receipt ID'),
-      }),
-      annotations: { readOnlyHint: true, destructiveHint: false },
+      description: 'Get a payment receipt by its UUID.',
+      inputSchema: paymentReceiptIdInputSchema,
+      outputSchema: paymentReceiptEntityToolOutputSchema,
+      annotations: readAnnotations,
     },
-    async ({ id }) => {
+    async ({ id }, extra) => {
       try {
-        return jsonResult(await client.getPaymentReceipt(id));
-      } catch (e) {
-        return errorResult('siigo_get_payment_receipt', e);
+        return jsonResult(await client.getPaymentReceipt(id, { signal: extra.signal }));
+      } catch (error) {
+        return errorResult('siigo_get_payment_receipt', error);
       }
     },
   );
@@ -51,47 +80,16 @@ export function registerPaymentReceiptTools({ server, client }: ToolContext) {
     {
       title: 'Create Payment Receipt',
       description:
-        'Create a new payment receipt / disbursement (recibo de pago / comprobante de egreso). Supports DebtPayment, AdvancePayment, and Advanced types.',
-      inputSchema: z.object({
-        paymentReceipt: z
-          .object({
-            document: z.object({
-              id: z.number().describe('Document type ID (type RP)'),
-            }),
-            date: z.string().describe('Date (YYYY-MM-DD)'),
-            type: z.enum(['DebtPayment', 'AdvancePayment', 'Advanced']).describe('Receipt type'),
-            customer: z.object({
-              identification: z.string(),
-              branch_office: z.number().optional(),
-            }),
-            cost_center: z.number().optional(),
-            currency: z
-              .object({
-                code: z.string(),
-                exchange_rate: z.number(),
-              })
-              .optional(),
-            items: z.array(z.record(z.string(), z.unknown())).describe('Receipt items (structure varies by type)'),
-            payments: z
-              .array(
-                z.object({
-                  id: z.number(),
-                  value: z.number(),
-                  due_date: z.string().optional(),
-                }),
-              )
-              .optional(),
-            observations: z.string().optional(),
-          })
-          .describe('Payment receipt data'),
-      }),
-      annotations: { readOnlyHint: false, destructiveHint: false },
+        'Create a supplier-oriented payment receipt. Supports DebtPayment, AdvancePayment, and the current Detailed advanced variant.',
+      inputSchema: paymentReceiptCreateToolSchema,
+      outputSchema: paymentReceiptEntityToolOutputSchema,
+      annotations: createAnnotations,
     },
-    async ({ paymentReceipt }) => {
+    async ({ paymentReceipt }, extra) => {
       try {
-        return jsonResult(await client.createPaymentReceipt(paymentReceipt));
-      } catch (e) {
-        return errorResult('siigo_create_payment_receipt', e);
+        return jsonResult(await client.createPaymentReceipt(paymentReceipt, { signal: extra.signal }));
+      } catch (error) {
+        return errorResult('siigo_create_payment_receipt', error);
       }
     },
   );
@@ -100,18 +98,16 @@ export function registerPaymentReceiptTools({ server, client }: ToolContext) {
     'siigo_update_payment_receipt',
     {
       title: 'Update Payment Receipt',
-      description: 'Update an existing payment receipt',
-      inputSchema: z.object({
-        id: z.string().describe('Payment receipt ID'),
-        paymentReceipt: z.record(z.string(), z.unknown()).describe('Payment receipt data to update (partial)'),
-      }),
-      annotations: { readOnlyHint: false, destructiveHint: false },
+      description: 'Update editable fields of an existing payment receipt.',
+      inputSchema: paymentReceiptUpdateToolSchema,
+      outputSchema: paymentReceiptEntityToolOutputSchema,
+      annotations: updateAnnotations,
     },
-    async ({ id, paymentReceipt }) => {
+    async ({ id, paymentReceipt }, extra) => {
       try {
-        return jsonResult(await client.updatePaymentReceipt(id, paymentReceipt));
-      } catch (e) {
-        return errorResult('siigo_update_payment_receipt', e);
+        return jsonResult(await client.updatePaymentReceipt(id, paymentReceipt, { signal: extra.signal }));
+      } catch (error) {
+        return errorResult('siigo_update_payment_receipt', error);
       }
     },
   );
@@ -120,17 +116,16 @@ export function registerPaymentReceiptTools({ server, client }: ToolContext) {
     'siigo_delete_payment_receipt',
     {
       title: 'Delete Payment Receipt',
-      description: 'Delete a payment receipt',
-      inputSchema: z.object({
-        id: z.string().describe('Payment receipt ID'),
-      }),
-      annotations: { readOnlyHint: false, destructiveHint: true },
+      description: 'Delete a payment receipt by its UUID.',
+      inputSchema: paymentReceiptIdInputSchema,
+      outputSchema: paymentReceiptDeleteToolOutputSchema,
+      annotations: deleteAnnotations,
     },
-    async ({ id }) => {
+    async ({ id }, extra) => {
       try {
-        return jsonResult(await client.deletePaymentReceipt(id));
-      } catch (e) {
-        return errorResult('siigo_delete_payment_receipt', e);
+        return jsonResult(await client.deletePaymentReceipt(id, { signal: extra.signal }));
+      } catch (error) {
+        return errorResult('siigo_delete_payment_receipt', error);
       }
     },
   );

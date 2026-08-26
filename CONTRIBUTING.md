@@ -14,10 +14,14 @@ This project is ESM-first and uses TypeScript with explicit `.js` extensions in 
 
 ## Project Structure
 
-- `src/index.ts` starts the MCP server and registers tool groups.
+- `src/cli.ts` validates runtime configuration and starts the selected MCP transport.
+- `src/index.ts` is the side-effect-free public library entrypoint.
+- `src/mcp-server.ts` creates the MCP server and registers each resource group.
 - `src/tools/*.ts` contains MCP tool registration by Siigo API resource.
+- `src/schemas/*.ts` contains strict Zod request contracts and concrete response schemas.
+- `src/contracts.ts` exposes request and query types inferred from the Zod schemas.
 - `src/siigo-client.ts` owns HTTP calls, authentication, pagination helpers, and API error translation.
-- `src/types.ts` contains shared Siigo request and response contracts.
+- `src/types.ts` contains shared configuration and response contracts.
 - `test/*.test.js` tests the compiled output from `dist/`.
 
 ## Adding Or Updating Tools
@@ -26,8 +30,10 @@ This project is ESM-first and uses TypeScript with explicit `.js` extensions in 
 - Add endpoint HTTP logic to `SiigoClient`; keep MCP handlers thin.
 - Put new tool registrations in the matching `src/tools/<resource>.ts` file.
 - Use lowercase snake_case tool names prefixed with `siigo_`.
-- Set `readOnlyHint` and `destructiveHint` accurately.
-- Prefer flexible `z.record(z.string(), z.unknown())` payload schemas for large Siigo documents when the upstream API shape changes often.
+- Set `readOnlyHint`, `destructiveHint`, `idempotentHint`, and `openWorldHint` accurately.
+- Define endpoint-specific strict input schemas, including documented conditional and cross-field validation. Do not hide known fields behind permissive records.
+- Define a concrete output schema whenever a tool is added or changed.
+- Reconcile conflicting Siigo sources using [docs/SOURCE_OF_TRUTH.md](docs/SOURCE_OF_TRUTH.md); old code and inferred endpoint symmetry are not contract evidence.
 - Update `README.md` and `CHANGELOG.md` when supported tools or behavior changes.
 
 ## Verification

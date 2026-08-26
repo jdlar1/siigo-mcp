@@ -1,28 +1,58 @@
-import { z } from 'zod';
 import { errorResult, jsonResult } from '../mcp-results.js';
+import {
+  purchaseCreateToolSchema,
+  purchaseDeleteToolOutputSchema,
+  purchaseEntityToolOutputSchema,
+  purchaseIdInputSchema,
+  purchaseListQuerySchema,
+  purchaseListToolOutputSchema,
+  purchaseUpdateToolSchema,
+} from '../schemas/purchases.js';
 import type { ToolContext } from '../tool-context.js';
 
-export function registerPurchaseTools({ server, client }: ToolContext) {
-  // ═══════════════════════════════════════════════════════════════════════════
-  // PURCHASES - Facturas de Compra (5 tools)
-  // ═══════════════════════════════════════════════════════════════════════════
+const readAnnotations = {
+  readOnlyHint: true,
+  destructiveHint: false,
+  idempotentHint: true,
+  openWorldHint: true,
+} as const;
 
+const createAnnotations = {
+  readOnlyHint: false,
+  destructiveHint: false,
+  idempotentHint: false,
+  openWorldHint: true,
+} as const;
+
+const updateAnnotations = {
+  readOnlyHint: false,
+  destructiveHint: false,
+  idempotentHint: true,
+  openWorldHint: true,
+} as const;
+
+const deleteAnnotations = {
+  readOnlyHint: false,
+  destructiveHint: true,
+  idempotentHint: true,
+  openWorldHint: true,
+} as const;
+
+export function registerPurchaseTools({ server, client }: ToolContext) {
   server.registerTool(
     'siigo_get_purchases',
     {
       title: 'Get Purchases',
-      description: 'Get list of purchase invoices (facturas de compra) from Siigo',
-      inputSchema: z.object({
-        page: z.number().optional().describe('Page number'),
-        page_size: z.number().optional().describe('Number of items per page'),
-      }),
-      annotations: { readOnlyHint: true, destructiveHint: false },
+      description: 'Get purchase invoices with pagination and document/date filters from Siigo.',
+      inputSchema: purchaseListQuerySchema,
+      outputSchema: purchaseListToolOutputSchema,
+      annotations: readAnnotations,
     },
-    async (args) => {
+    async (args, extra) => {
       try {
-        return jsonResult(await client.getPurchases(args));
-      } catch (e) {
-        return errorResult('siigo_get_purchases', e);
+        return jsonResult(await client.getPurchases(args, { signal: extra.signal }));
+      } catch (error) {
+        return errorResult('siigo_get_purchases', error);
       }
     },
   );
@@ -31,17 +61,16 @@ export function registerPurchaseTools({ server, client }: ToolContext) {
     'siigo_get_purchase',
     {
       title: 'Get Purchase',
-      description: 'Get a specific purchase invoice by ID',
-      inputSchema: z.object({
-        id: z.string().describe('Purchase ID'),
-      }),
-      annotations: { readOnlyHint: true, destructiveHint: false },
+      description: 'Get a purchase invoice by its UUID.',
+      inputSchema: purchaseIdInputSchema,
+      outputSchema: purchaseEntityToolOutputSchema,
+      annotations: readAnnotations,
     },
-    async ({ id }) => {
+    async ({ id }, extra) => {
       try {
-        return jsonResult(await client.getPurchase(id));
-      } catch (e) {
-        return errorResult('siigo_get_purchase', e);
+        return jsonResult(await client.getPurchase(id, { signal: extra.signal }));
+      } catch (error) {
+        return errorResult('siigo_get_purchase', error);
       }
     },
   );
@@ -50,18 +79,16 @@ export function registerPurchaseTools({ server, client }: ToolContext) {
     'siigo_create_purchase',
     {
       title: 'Create Purchase',
-      description:
-        'Create a new purchase invoice (factura de compra). Use document type FC. If the document type has document_support=true, it creates a Documento Soporte.',
-      inputSchema: z.object({
-        purchase: z.record(z.string(), z.unknown()).describe('Purchase data'),
-      }),
-      annotations: { readOnlyHint: false, destructiveHint: false },
+      description: 'Create a purchase invoice (FC). The supplier, provider invoice, typed items, and at least one payment are required.',
+      inputSchema: purchaseCreateToolSchema,
+      outputSchema: purchaseEntityToolOutputSchema,
+      annotations: createAnnotations,
     },
-    async ({ purchase }) => {
+    async ({ purchase }, extra) => {
       try {
-        return jsonResult(await client.createPurchase(purchase));
-      } catch (e) {
-        return errorResult('siigo_create_purchase', e);
+        return jsonResult(await client.createPurchase(purchase, { signal: extra.signal }));
+      } catch (error) {
+        return errorResult('siigo_create_purchase', error);
       }
     },
   );
@@ -70,18 +97,16 @@ export function registerPurchaseTools({ server, client }: ToolContext) {
     'siigo_update_purchase',
     {
       title: 'Update Purchase',
-      description: 'Update an existing purchase invoice',
-      inputSchema: z.object({
-        id: z.string().describe('Purchase ID'),
-        purchase: z.record(z.string(), z.unknown()).describe('Purchase data to update (partial)'),
-      }),
-      annotations: { readOnlyHint: false, destructiveHint: false },
+      description: 'Update editable fields of an existing purchase invoice.',
+      inputSchema: purchaseUpdateToolSchema,
+      outputSchema: purchaseEntityToolOutputSchema,
+      annotations: updateAnnotations,
     },
-    async ({ id, purchase }) => {
+    async ({ id, purchase }, extra) => {
       try {
-        return jsonResult(await client.updatePurchase(id, purchase));
-      } catch (e) {
-        return errorResult('siigo_update_purchase', e);
+        return jsonResult(await client.updatePurchase(id, purchase, { signal: extra.signal }));
+      } catch (error) {
+        return errorResult('siigo_update_purchase', error);
       }
     },
   );
@@ -90,17 +115,16 @@ export function registerPurchaseTools({ server, client }: ToolContext) {
     'siigo_delete_purchase',
     {
       title: 'Delete Purchase',
-      description: 'Delete a purchase invoice',
-      inputSchema: z.object({
-        id: z.string().describe('Purchase ID'),
-      }),
-      annotations: { readOnlyHint: false, destructiveHint: true },
+      description: 'Delete a purchase invoice by its UUID.',
+      inputSchema: purchaseIdInputSchema,
+      outputSchema: purchaseDeleteToolOutputSchema,
+      annotations: deleteAnnotations,
     },
-    async ({ id }) => {
+    async ({ id }, extra) => {
       try {
-        return jsonResult(await client.deletePurchase(id));
-      } catch (e) {
-        return errorResult('siigo_delete_purchase', e);
+        return jsonResult(await client.deletePurchase(id, { signal: extra.signal }));
+      } catch (error) {
+        return errorResult('siigo_delete_purchase', error);
       }
     },
   );

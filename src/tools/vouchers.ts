@@ -1,28 +1,42 @@
-import { z } from 'zod';
 import { errorResult, jsonResult } from '../mcp-results.js';
+import {
+  voucherCreateToolSchema,
+  voucherEntityToolOutputSchema,
+  voucherIdInputSchema,
+  voucherListQuerySchema,
+  voucherListToolOutputSchema,
+} from '../schemas/vouchers.js';
 import type { ToolContext } from '../tool-context.js';
 
-export function registerVoucherTools({ server, client }: ToolContext) {
-  // ═══════════════════════════════════════════════════════════════════════════
-  // VOUCHERS / CASH RECEIPTS - Recibos de Caja (3 tools)
-  // ═══════════════════════════════════════════════════════════════════════════
+const readAnnotations = {
+  readOnlyHint: true,
+  destructiveHint: false,
+  idempotentHint: true,
+  openWorldHint: true,
+} as const;
 
+const createAnnotations = {
+  readOnlyHint: false,
+  destructiveHint: false,
+  idempotentHint: false,
+  openWorldHint: true,
+} as const;
+
+export function registerVoucherTools({ server, client }: ToolContext) {
   server.registerTool(
     'siigo_get_vouchers',
     {
       title: 'Get Vouchers',
-      description: 'Get list of vouchers / cash receipts (recibos de caja) from Siigo',
-      inputSchema: z.object({
-        page: z.number().optional().describe('Page number'),
-        page_size: z.number().optional().describe('Number of items per page'),
-      }),
-      annotations: { readOnlyHint: true, destructiveHint: false },
+      description: 'Get cash receipts with name, date, creation, update, and pagination filters from Siigo.',
+      inputSchema: voucherListQuerySchema,
+      outputSchema: voucherListToolOutputSchema,
+      annotations: readAnnotations,
     },
-    async (args) => {
+    async (args, extra) => {
       try {
-        return jsonResult(await client.getVouchers(args));
-      } catch (e) {
-        return errorResult('siigo_get_vouchers', e);
+        return jsonResult(await client.getVouchers(args, { signal: extra.signal }));
+      } catch (error) {
+        return errorResult('siigo_get_vouchers', error);
       }
     },
   );
@@ -31,17 +45,16 @@ export function registerVoucherTools({ server, client }: ToolContext) {
     'siigo_get_voucher',
     {
       title: 'Get Voucher',
-      description: 'Get a specific voucher / cash receipt by ID',
-      inputSchema: z.object({
-        id: z.string().describe('Voucher ID'),
-      }),
-      annotations: { readOnlyHint: true, destructiveHint: false },
+      description: 'Get a cash receipt by its UUID.',
+      inputSchema: voucherIdInputSchema,
+      outputSchema: voucherEntityToolOutputSchema,
+      annotations: readAnnotations,
     },
-    async ({ id }) => {
+    async ({ id }, extra) => {
       try {
-        return jsonResult(await client.getVoucher(id));
-      } catch (e) {
-        return errorResult('siigo_get_voucher', e);
+        return jsonResult(await client.getVoucher(id, { signal: extra.signal }));
+      } catch (error) {
+        return errorResult('siigo_get_voucher', error);
       }
     },
   );
@@ -50,59 +63,22 @@ export function registerVoucherTools({ server, client }: ToolContext) {
     'siigo_create_voucher',
     {
       title: 'Create Voucher',
-      description: 'Create a new voucher / cash receipt (recibo de caja). Supports DebtPayment, AdvancePayment, and MiscIncome types.',
-      inputSchema: z.object({
-        voucher: z
-          .object({
-            document: z.object({
-              id: z.number().describe('Document type ID (type RC)'),
-            }),
-            date: z.string().describe('Date (YYYY-MM-DD)'),
-            type: z.enum(['DebtPayment', 'AdvancePayment', 'MiscIncome']).describe('Voucher type'),
-            customer: z.object({
-              identification: z.string(),
-              branch_office: z.union([z.number(), z.string()]).optional(),
-            }),
-            income: z
-              .object({
-                id: z.number().describe('Miscellaneous income concept ID from /v1/misc-income'),
-              })
-              .optional(),
-            payment: z
-              .object({
-                id: z.number(),
-                value: z.number(),
-                due_date: z.string().optional(),
-              })
-              .optional(),
-            cost_center: z.number().optional(),
-            currency: z
-              .object({
-                code: z.string(),
-                exchange_rate: z.number(),
-              })
-              .optional(),
-            items: z.array(z.record(z.string(), z.unknown())).optional().describe('Voucher items (structure varies by type)'),
-            payments: z
-              .array(
-                z.object({
-                  id: z.number(),
-                  value: z.number(),
-                  due_date: z.string().optional(),
-                }),
-              )
-              .optional(),
-            observations: z.string().optional(),
-          })
-          .describe('Voucher data'),
-      }),
-      annotations: { readOnlyHint: false, destructiveHint: false },
+      description:
+        'Create a cash receipt. DebtPayment, AdvancePayment, and MiscIncome use discriminated request contracts; MiscIncome is routed through its dedicated API variant.',
+      inputSchema: voucherCreateToolSchema,
+      outputSchema: voucherEntityToolOutputSchema,
+      annotations: createAnnotations,
     },
-    async ({ voucher }) => {
+    async ({ voucher, idempotency_key }, extra) => {
       try {
-        return jsonResult(await client.createVoucher(voucher));
-      } catch (e) {
-        return errorResult('siigo_create_voucher', e);
+        const options = { idempotencyKey: idempotency_key, signal: extra.signal };
+        const result =
+          voucher.type === 'MiscIncome'
+            ? await client.createMiscIncomeVoucher(voucher, options)
+            : await client.createVoucher(voucher, options);
+        return jsonResult(result);
+      } catch (error) {
+        return errorResult('siigo_create_voucher', error);
       }
     },
   );

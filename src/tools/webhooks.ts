@@ -1,25 +1,58 @@
-import { z } from 'zod';
 import { errorResult, jsonResult } from '../mcp-results.js';
+import {
+  webhookCreateToolSchema,
+  webhookDeleteToolOutputSchema,
+  webhookEntityToolOutputSchema,
+  webhookIdInputSchema,
+  webhookListQuerySchema,
+  webhookListToolOutputSchema,
+  webhookUpdateToolSchema,
+} from '../schemas/webhooks.js';
 import type { ToolContext } from '../tool-context.js';
 
-export function registerWebhookTools({ server, client }: ToolContext) {
-  // ═══════════════════════════════════════════════════════════════════════════
-  // WEBHOOKS (4 tools)
-  // ═══════════════════════════════════════════════════════════════════════════
+const readAnnotations = {
+  readOnlyHint: true,
+  destructiveHint: false,
+  idempotentHint: true,
+  openWorldHint: true,
+} as const;
 
+const createAnnotations = {
+  readOnlyHint: false,
+  destructiveHint: false,
+  idempotentHint: false,
+  openWorldHint: true,
+} as const;
+
+const updateAnnotations = {
+  readOnlyHint: false,
+  destructiveHint: false,
+  idempotentHint: true,
+  openWorldHint: true,
+} as const;
+
+const deleteAnnotations = {
+  readOnlyHint: false,
+  destructiveHint: true,
+  idempotentHint: true,
+  openWorldHint: true,
+} as const;
+
+export function registerWebhookTools({ server, client }: ToolContext) {
   server.registerTool(
     'siigo_get_webhooks',
     {
       title: 'Get Webhooks',
-      description: 'Get list of webhook subscriptions',
-      inputSchema: z.object({}),
-      annotations: { readOnlyHint: true, destructiveHint: false },
+      description: 'Get webhook subscriptions with pagination.',
+      inputSchema: webhookListQuerySchema,
+      outputSchema: webhookListToolOutputSchema,
+      annotations: readAnnotations,
     },
-    async () => {
+    async (args, extra) => {
       try {
-        return jsonResult(await client.getWebhooks());
-      } catch (e) {
-        return errorResult('siigo_get_webhooks', e);
+        return jsonResult(await client.getWebhooks(args, { signal: extra.signal }));
+      } catch (error) {
+        return errorResult('siigo_get_webhooks', error);
       }
     },
   );
@@ -28,19 +61,16 @@ export function registerWebhookTools({ server, client }: ToolContext) {
     'siigo_create_webhook',
     {
       title: 'Create Webhook',
-      description: 'Subscribe to a webhook event',
-      inputSchema: z.object({
-        event: z.string().describe('Event to subscribe to'),
-        url: z.string().describe('Webhook URL (HTTPS)'),
-        secret: z.string().optional().describe('Webhook secret for signature verification'),
-      }),
-      annotations: { readOnlyHint: false, destructiveHint: false },
+      description: 'Subscribe an application URL to a Siigo webhook topic.',
+      inputSchema: webhookCreateToolSchema,
+      outputSchema: webhookEntityToolOutputSchema,
+      annotations: createAnnotations,
     },
-    async (args) => {
+    async (webhook, extra) => {
       try {
-        return jsonResult(await client.createWebhook(args));
-      } catch (e) {
-        return errorResult('siigo_create_webhook', e);
+        return jsonResult(await client.createWebhook(webhook, { signal: extra.signal }));
+      } catch (error) {
+        return errorResult('siigo_create_webhook', error);
       }
     },
   );
@@ -49,21 +79,17 @@ export function registerWebhookTools({ server, client }: ToolContext) {
     'siigo_update_webhook',
     {
       title: 'Update Webhook',
-      description: 'Update an existing webhook subscription',
-      inputSchema: z.object({
-        id: z.string().describe('Webhook ID'),
-        event: z.string().optional().describe('Event to subscribe to'),
-        url: z.string().optional().describe('Webhook URL (HTTPS)'),
-        secret: z.string().optional().describe('Webhook secret'),
-        active: z.boolean().optional().describe('Active status'),
-      }),
-      annotations: { readOnlyHint: false, destructiveHint: false },
+      description:
+        "Update a webhook subscription using Siigo's collection route. An optional legacy ID enables fallback for older deployments.",
+      inputSchema: webhookUpdateToolSchema,
+      outputSchema: webhookEntityToolOutputSchema,
+      annotations: updateAnnotations,
     },
-    async ({ id, ...webhook }) => {
+    async ({ id, ...webhook }, extra) => {
       try {
-        return jsonResult(await client.updateWebhook(id, webhook));
-      } catch (e) {
-        return errorResult('siigo_update_webhook', e);
+        return jsonResult(await client.updateWebhook(id, webhook, { signal: extra.signal }));
+      } catch (error) {
+        return errorResult('siigo_update_webhook', error);
       }
     },
   );
@@ -72,17 +98,16 @@ export function registerWebhookTools({ server, client }: ToolContext) {
     'siigo_delete_webhook',
     {
       title: 'Delete Webhook',
-      description: 'Delete a webhook subscription',
-      inputSchema: z.object({
-        id: z.string().describe('Webhook ID'),
-      }),
-      annotations: { readOnlyHint: false, destructiveHint: true },
+      description: 'Delete a webhook subscription by its UUID.',
+      inputSchema: webhookIdInputSchema,
+      outputSchema: webhookDeleteToolOutputSchema,
+      annotations: deleteAnnotations,
     },
-    async ({ id }) => {
+    async ({ id }, extra) => {
       try {
-        return jsonResult(await client.deleteWebhook(id));
-      } catch (e) {
-        return errorResult('siigo_delete_webhook', e);
+        return jsonResult(await client.deleteWebhook(id, { signal: extra.signal }));
+      } catch (error) {
+        return errorResult('siigo_delete_webhook', error);
       }
     },
   );
