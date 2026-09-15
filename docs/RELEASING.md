@@ -7,7 +7,7 @@ and attaches provenance; no npm token secret is needed.
 ## Workflows
 
 - [CI](../.github/workflows/ci.yml) runs frozen-lockfile installation, lint, tests
-  (including the build), and a package preview on pull requests and `master` pushes.
+  (including the build), and a package preview on pull requests and `main` pushes.
 - [Publish to npm](../.github/workflows/publish.yml) runs the same checks on a fresh
   GitHub-hosted runner, verifies the tag against the package and server versions,
   and inspects the package's exported files before publishing that exact tarball.
@@ -48,7 +48,7 @@ and [npm trust reference](https://docs.npmjs.com/cli/v11/commands/npm-trust/).
 
 1. Update `package.json`, `src/version.ts`, the changelog, and the README's release
    summary. Keep the package and server versions identical.
-2. Commit and push the changes to `master`. Wait for CI to pass.
+2. Commit and push the changes to `main`. Wait for CI to pass.
 3. Create an annotated tag for the package version and push it:
 
    ```bash
@@ -74,7 +74,7 @@ To exercise the release pipeline without publishing, select **Run workflow** on
 **Publish to npm**, or use:
 
 ```bash
-gh workflow run publish.yml --ref master
+gh workflow run publish.yml --ref main
 ```
 
 ## Manual fallback
