@@ -62,6 +62,28 @@ export async function prepareInvoice(client: SiigoClient, input: z.infer<typeof 
       candidates: documents.map(({ id, name }) => ({ id, name })),
     });
 
+  const document = documents.length === 1 ? documents[0] : undefined;
+  if (document?.automatic_number === false)
+    unresolved.push({
+      field: 'number',
+      message: 'This document requires manual numbering. Supply number in a complete payload to siigo_create_invoice.',
+    });
+  if (document?.cost_center_mandatory)
+    unresolved.push({
+      field: 'cost_center',
+      message: 'This document requires a cost center. Supply cost_center in a complete payload to siigo_create_invoice.',
+    });
+  if (document?.healthcare_company)
+    unresolved.push({
+      field: 'healthcare_company',
+      message: 'This document requires healthcare fields. Supply healthcare_company in a complete payload to siigo_create_invoice.',
+    });
+  if (document?.seller_by_item)
+    input.items.forEach((item, index) => {
+      if (item.seller === undefined)
+        unresolved.push({ field: `items.${index}.seller`, message: 'This document requires an explicit seller on every item.' });
+    });
+
   for (const code of new Set(input.items.map((item) => item.code))) {
     const products = (await collect((page) => client.getProducts({ code, page, page_size: 100 }, options), signal)).filter(
       (product) => product.code === code && product.active !== false,

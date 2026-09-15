@@ -34,6 +34,7 @@ import type {
   SiigoWebhookListQuery,
   SiigoWebhookUpdateInput,
 } from './contracts.js';
+import { idempotencyKeySchema } from './schemas/common.js';
 import type {
   SiigoAccountGroup,
   SiigoAccountGroupIn,
@@ -87,6 +88,8 @@ export class SiigoApiError<T = unknown> extends Error {
 export const DEFAULT_REQUESTS_PER_MINUTE = 100;
 /** Do not allow a local setting to exceed Siigo's documented production budget. */
 export const MAX_REQUESTS_PER_MINUTE = 100;
+
+const IDEMPOTENT_POST_ENDPOINTS = new Set(['/v1/invoices', '/v1/credit-notes', '/v1/journals', '/v1/vouchers']);
 
 export function validateRequestsPerMinute(value: number | undefined): number {
   if (value === undefined) {
@@ -394,6 +397,15 @@ export class SiigoClient {
       throw this.abortError();
     }
 
+    const normalizedMethod = method.toUpperCase();
+    const idempotencyKey = options?.idempotencyKey;
+    if (idempotencyKey !== undefined) {
+      if (normalizedMethod !== 'POST' || !IDEMPOTENT_POST_ENDPOINTS.has(endpoint)) {
+        throw new Error('idempotencyKey is supported only when creating invoices, credit notes, journals, or vouchers');
+      }
+      idempotencyKeySchema.parse(idempotencyKey);
+    }
+
     await this.authenticate(false, options?.signal);
 
     let authenticationRetried = false;
@@ -416,8 +428,8 @@ export class SiigoClient {
       if (options?.signal !== undefined) {
         requestConfig.signal = options.signal;
       }
-      if (options?.idempotencyKey !== undefined) {
-        requestConfig.headers = { 'Idempotency-Key': options.idempotencyKey };
+      if (idempotencyKey !== undefined) {
+        requestConfig.headers = { 'Idempotency-Key': idempotencyKey };
       }
 
       try {
@@ -438,8 +450,7 @@ export class SiigoClient {
         }
 
         const status = axios.isAxiosError(error) ? error.response?.status : undefined;
-        const normalizedMethod = method.toUpperCase();
-        const retryableMethod = ['GET', 'HEAD', 'OPTIONS', 'PUT', 'DELETE'].includes(normalizedMethod) || Boolean(options?.idempotencyKey);
+        const retryableMethod = ['GET', 'HEAD', 'OPTIONS', 'PUT', 'DELETE'].includes(normalizedMethod) || idempotencyKey !== undefined;
 
         if (retryableMethod && status !== undefined && [429, 503, 504].includes(status) && transientRetries < 2) {
           await this.delay(this.retryDelay(error, transientRetries), options?.signal);

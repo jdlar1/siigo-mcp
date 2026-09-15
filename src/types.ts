@@ -55,6 +55,7 @@ export type SiigoApiResponse<T> =
     };
 
 export interface SiigoRequestOptions {
+  /** Alphanumeric, 1-30 characters; only for creating invoices, credit notes, journals, or vouchers. */
   idempotencyKey?: string;
   signal?: AbortSignal;
 }

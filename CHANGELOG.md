@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fixed
+
+- Return unresolved invoice preparation requirements for manual numbering, mandatory cost centers, healthcare fields, and missing item-level sellers.
+- Validate direct-client idempotency keys and restrict them to documented invoice, credit-note, journal, and voucher creation routes. Unsupported keys now fail before any HTTP request instead of enabling unsafe retries.
+
+### Compatibility
+
+- Direct `SiigoClient` callers must omit `idempotencyKey` for reads, updates, deletes, and unsupported creation routes. Supported creation keys remain unchanged; unsupported writes have no documented idempotency guarantee and must not be automatically retried on that basis.
+- Invoice preparation callers receiving `ready: false` for advanced document requirements should supply a complete payload through `siigo_create_invoice`; item-level sellers can be supplied directly to preparation.
+
 ## [5.0.1] - 2026-09-15
 
 ### Fixed

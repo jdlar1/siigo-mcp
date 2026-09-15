@@ -26,6 +26,7 @@ For scheduled changes, the MCP adopts the new contract only after its effective 
 
 | Area | Conflicting evidence | v4 decision |
 | --- | --- | --- |
+| Customer identification length (rechecked 2026-09-15) | Customer and inline invoice narrative tables say 50 characters; the current customer page's Colombia identification-type table limits numeric types `13`, `31`, and `11` to 3–13 digits and the other supported types to 1–20 alphanumeric characters. | Retain the more specific identification-type limits for customer creation, including inline customers. Do not widen the shared customer schema based only on the general table. |
 | Healthcare invoice reason | Apiary uses `nonContractInvoiceReason` and labels it numeric; the current endpoint reference uses `non_contract_invoice_reason` with string codes `01`–`07`. | Use `non_contract_invoice_reason` and validate the seven current string codes. |
 | Healthcare payment and plan | Older material includes payment method `05` and service plan `01`; the current reference lists payment `01`–`04` and service plans `02`–`17`. | Use the current lists and the documented field relationships. |
 | Healthcare contract | Older material limits `contract_number` to 50 characters. | Use the current 64-character limit and enforce its exclusions with policy and non-contract reason. |
@@ -90,3 +91,22 @@ price, and payment value to 2, 6, and 2 decimal places respectively. Purchase
 create/update validation now enforces those rules in both MCP profiles. This is a
 targeted reconciliation, not a new exhaustive audit of every endpoint. Verification
 uses mocked upstream calls; no live accounting documents are created.
+
+## Follow-up fixes — 2026-09-15
+
+- Invoice preparation checks the selected document's manual numbering, mandatory
+  cost center, healthcare, and item-level seller settings before returning ready.
+  Advanced fields remain available through the full creation schema; preparation
+  reports unresolved requirements instead of selecting values for the caller.
+- The exported client accepts `idempotencyKey` only for documented POST creation
+  routes: `/v1/invoices`, `/v1/credit-notes`, `/v1/journals`, and `/v1/vouchers`
+  (including MiscIncome). Keys must be 1–30 alphanumeric characters. Unsupported
+  use fails before authentication or requests, so merely providing a key cannot
+  enable retries for an unsupported write.
+- Rechecked the customer identification length discrepancy against the current
+  customer page's identification-type table; retained the specific limits above.
+
+References: [invoice document settings](https://developers.siigo.com/docs/siigoapi/invoice/7-get-document-types),
+[invoice creation](https://developers.siigo.com/docs/siigoapi/invoice/1-create-invoice/),
+[customer creation](https://developers.siigo.com/docs/siigoapi/customer/1-create-customer/),
+and [idempotency](https://developers.siigo.com/docs/siigoapi/idempotencia).
