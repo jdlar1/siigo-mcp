@@ -2,7 +2,7 @@
 
 A Model Context Protocol (MCP) server that provides full integration with the Siigo API, enabling access to Colombian accounting software features including products, customers, invoices, quotations, purchases, credit notes, vouchers, payment receipts, journals, webhooks, and more.
 
-**v5.0.0 (unreleased)** — Node 24 LTS, MCP SDK v2, 10 task-oriented tools with on-demand access to 71 operations, strict current Siigo contracts, Resolution 948 healthcare support, full sales and accounting resources, safe retries/idempotency, MCP cancellation, and public TypeScript/Zod interfaces.
+**v5.0.0** — Node 24 LTS, MCP SDK v2, 10 task-oriented tools with on-demand access to 71 operations, strict current Siigo contracts, Resolution 948 healthcare support, full sales and accounting resources, safe retries/idempotency, MCP cancellation, and public TypeScript/Zod interfaces.
 
 ## Features
 
