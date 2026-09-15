@@ -59,7 +59,7 @@ const domains = {
     load: () => import('./tools/reports.js').then((m) => m.registerReportTools),
   },
   account_groups: {
-    description: 'Account groups; grupos contables',
+    description: 'Account groups: inventory classifications; grupos de inventario. Not the chart of accounts (PUC).',
     load: () => import('./tools/account-groups.js').then((m) => m.registerAccountGroupTools),
   },
 } satisfies Record<string, { description: string; load: () => Promise<(context: ToolContext) => void> }>;

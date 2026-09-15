@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [5.0.1] - 2026-09-15
+
+### Fixed
+
+- Reject purchase create/update requests with item suppliers unless `supplier_by_item` is explicitly true.
+- Validate purchase quantities to 2 decimal places, prices to 6, and payment values to 2 before calling Siigo. Valid values are forwarded unchanged; excess precision is rejected without rounding.
+- Identify account groups as inventory classifications in operation discovery, clarifying that they are not the chart of accounts (PUC).
+
+### Verification
+
+- Rechecked the downloadable Apiary blueprint against the supplied file and the repository snapshot: no contract changes after whitespace normalization.
+- Added mocked MCP regressions for purchase create/update validation in both compact and legacy profiles.
+
 ## [5.0.0] - 2026-09-14
 
 ### Breaking changes

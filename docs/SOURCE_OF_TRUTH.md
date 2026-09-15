@@ -76,3 +76,17 @@ For each release that claims contract coverage:
 4. Resolve conflicts using the precedence above and update this file.
 5. Run unit, schema, MCP protocol, and authenticated sandbox contract tests where credentials are available.
 6. Publish only after the packed npm artifact has been inspected.
+
+## v5.0.1 targeted reconciliation — 2026-09-15
+
+The freshly downloaded Apiary blueprint and the supplied blueprint are byte-for-byte
+identical, with SHA-256 `c8f7ca47596f026cb63ece3ab5b11a85be7b21cdcb80f2216680888db1183d3d`.
+Both match the checked-in snapshot after trailing-whitespace normalization. No new
+blueprint endpoints or fields were found.
+
+The current [purchase create reference](https://developers.siigo.com/docs/siigoapi/purchase/1-create-purchase)
+requires `supplier_by_item: true` for item-level suppliers and limits quantity,
+price, and payment value to 2, 6, and 2 decimal places respectively. Purchase
+create/update validation now enforces those rules in both MCP profiles. This is a
+targeted reconciliation, not a new exhaustive audit of every endpoint. Verification
+uses mocked upstream calls; no live accounting documents are created.

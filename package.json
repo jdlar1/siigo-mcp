@@ -1,6 +1,6 @@
 {
   "name": "@jdlar/siigo-mcp",
-  "version": "5.0.0",
+  "version": "5.0.1",
   "description": "Model Context Protocol (MCP) server for Siigo Colombian accounting software API integration",
   "type": "module",
   "main": "dist/index.js",

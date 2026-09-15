@@ -133,3 +133,16 @@ old catalog and about 52 KB for the compact catalog, roughly 85% less. This meas
 JSON definition size, not actual model tokens, startup time, or provider billing.
 The test suite compares both catalogs and requires at least a 70% reduction,
 checks complete operation coverage, and verifies loading through Node module hooks.
+
+## Purchase validation and accounting accounts
+
+In v5.0.1, purchase create/update operations reject an item-level `supplier` unless
+`supplier_by_item` is explicitly `true`. Quantities allow at most 2 decimal places,
+prices 6, and payment values 2. Correct invalid payloads before retrying; the MCP
+does not round values automatically. Both tool profiles apply these checks.
+
+The `account_groups` domain contains inventory classifications, not the company's
+chart of accounts (PUC). The documented API does not provide a complete PUC catalog
+or a purchase dry-run endpoint. Local payload validation cannot establish that an
+account exists, is active, or is eligible for direct purchase posting; Siigo performs
+the final validation when the intended purchase is submitted.

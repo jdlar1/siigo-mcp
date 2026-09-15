@@ -5,6 +5,7 @@ import {
   dateTimeSchema,
   deleteResponseSchema,
   documentRefSchema,
+  hasAtMostDecimalPlaces,
   linksSchema,
   metadataSchema,
   paginationQuerySchema,
@@ -111,7 +112,33 @@ export const purchaseSchema = z
     items: z.array(purchaseItemSchema).min(1),
     payments: z.array(purchasePaymentSchema).min(1),
   })
-  .strict();
+  .strict()
+  .superRefine((purchase, context) => {
+    purchase.items.forEach((item, index) => {
+      if (item.supplier !== undefined && purchase.supplier_by_item !== true) {
+        context.addIssue({
+          code: 'custom',
+          path: ['items', index, 'supplier'],
+          message: 'Item supplier requires supplier_by_item to be true',
+        });
+      }
+      if (!hasAtMostDecimalPlaces(item.quantity, 2)) {
+        context.addIssue({ code: 'custom', path: ['items', index, 'quantity'], message: 'Quantity must have at most 2 decimal places' });
+      }
+      if (!hasAtMostDecimalPlaces(item.price, 6)) {
+        context.addIssue({ code: 'custom', path: ['items', index, 'price'], message: 'Price must have at most 6 decimal places' });
+      }
+    });
+    purchase.payments.forEach((payment, index) => {
+      if (!hasAtMostDecimalPlaces(payment.value, 2)) {
+        context.addIssue({
+          code: 'custom',
+          path: ['payments', index, 'value'],
+          message: 'Payment value must have at most 2 decimal places',
+        });
+      }
+    });
+  });
 
 export const purchaseUpdateSchema = purchaseSchema;
 

@@ -21,8 +21,8 @@ The `prepublishOnly` lifecycle repeats lint and tests, and `prepack` rebuilds `d
 Verify the registry after publication:
 
 ```bash
-npm view @jdlar/siigo-mcp@5.0.0 version dist-tags --json
-npx --yes @jdlar/siigo-mcp@5.0.0
+npm view @jdlar/siigo-mcp@5.0.1 version dist-tags --json
+npx --yes @jdlar/siigo-mcp@5.0.1
 ```
 
 The second command requires the three Siigo environment variables when it starts normally. It is enough to confirm that npm resolves and launches the executable; stop it after the startup check.
@@ -33,7 +33,7 @@ Push the release commit and its annotated tag:
 
 ```bash
 git push origin master
-git push origin v5.0.0
+git push origin v5.0.1
 ```
 
 If npm provenance is required, publish through a trusted CI workflow with npm OIDC and `npm publish --access public --provenance`; do not put a long-lived npm token in the repository.

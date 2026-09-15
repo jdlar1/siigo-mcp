@@ -34,6 +34,54 @@ const page = (results, total = results.length, number = 1) => ({
 });
 
 describe('compact tool surface', () => {
+  test.each([
+    ['compact', 'create', createMcpServer],
+    ['compact', 'update', createMcpServer],
+    ['legacy', 'create', createLegacyMcpServer],
+    ['legacy', 'update', createLegacyMcpServer],
+  ])('%s purchase %s validates suppliers and precision before calling Siigo', async (profile, action, factory) => {
+    const purchase = {
+      document: { id: 1 },
+      date: '2026-09-15',
+      supplier: { identification: '900123456' },
+      provider_invoice: { prefix: 'TEST', number: '1' },
+      items: [{ type: 'Account', code: '51010101', quantity: 0.29, price: 1.123456 }],
+      payments: [{ id: 1, value: 0.07 }],
+    };
+    const write = jest.fn().mockResolvedValue({ ...purchase, id });
+    const client = await connect({ [action === 'create' ? 'createPurchase' : 'updatePurchase']: write }, factory);
+    const invoke = (payload) => {
+      const operation = `siigo_${action}_purchase`;
+      const args = action === 'create' ? { purchase: payload } : { id, purchase: payload };
+      return profile === 'compact'
+        ? call(client, 'siigo_execute_write', { domain: 'purchases', operation, arguments: args })
+        : call(client, operation, args);
+    };
+    const invalid = [
+      { ...purchase, items: [{ ...purchase.items[0], supplier: 1 }] },
+      { ...purchase, supplier_by_item: false, items: [{ ...purchase.items[0], supplier: 1 }] },
+      { ...purchase, items: [{ ...purchase.items[0], quantity: 0.291 }] },
+      { ...purchase, items: [{ ...purchase.items[0], price: 1.1234567 }] },
+      { ...purchase, items: [{ ...purchase.items[0], price: 1e-7 }] },
+      { ...purchase, payments: [{ id: 1, value: 0.071 }] },
+    ];
+    for (const payload of invalid) {
+      expect((await invoke(payload)).isError).toBe(true);
+    }
+    expect(write).not.toHaveBeenCalled();
+
+    for (const payload of [
+      purchase,
+      { ...purchase, supplier_by_item: false },
+      { ...purchase, supplier_by_item: true, items: [{ ...purchase.items[0], supplier: 1, price: 1e-6 }] },
+    ]) {
+      expect((await invoke(payload)).isError).not.toBe(true);
+      const options = { signal: expect.any(AbortSignal) };
+      expect(write).toHaveBeenLastCalledWith(...(action === 'create' ? [payload, options] : [id, payload, options]));
+    }
+    expect(write).toHaveBeenCalledTimes(3);
+  });
+
   test('keeps ten tools stable and reduces advertised bytes by at least 70%, preserving all legacy operations through discovery', async () => {
     const compact = await connect();
     const legacy = await connect({}, createLegacyMcpServer);
