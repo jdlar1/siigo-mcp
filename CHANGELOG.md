@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [5.3.0] - 2026-09-15
+
+### Changed
+
+- Allow Node.js 24 and newer in the package engine requirement.
+- Rename the default branch to `main` and update CI and release instructions accordingly.
+- Add the Glama badge and license link to the README and update the license copyright year.
+
 ## [5.1.0] - 2026-09-15
 
 ### Added

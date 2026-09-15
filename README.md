@@ -6,7 +6,7 @@ A Model Context Protocol (MCP) server that provides full integration with the Si
   <img width="380" height="200" src="https://glama.ai/mcp/servers/@jdlar1/siigo-mcp/badge" alt="Siigo MCP Server" />
 </a>
 
-**v5.1.0** — Node 24 LTS, MCP SDK v2, 10 task-oriented tools with on-demand access to 71 operations, strict current Siigo contracts, Resolution 948 healthcare support, full sales and accounting resources, safe retries/idempotency, MCP cancellation, and public TypeScript/Zod interfaces. Invoice preparation reports advanced document requirements, and direct-client idempotency keys are limited to supported creation operations.
+**v5.3.0** — Node 24 or newer, MCP SDK v2, 10 task-oriented tools with on-demand access to 71 operations, strict current Siigo contracts, Resolution 948 healthcare support, full sales and accounting resources, safe retries/idempotency, MCP cancellation, and public TypeScript/Zod interfaces. This release updates Node engine compatibility, package documentation, and CI and release instructions for the `main` default branch.
 
 ## Features
 
