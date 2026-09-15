@@ -5,6 +5,27 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [6.0.0] - 2026-09-15
+
+### Breaking changes
+
+- Replace the ten-tool compact catalog with eight tools. Rename document retrieval to `siigo_get_record`, invoice preparation to `siigo_prepare_document`, and invoice creation to `siigo_create_document`, with explicit document kinds and new input/result envelopes.
+- Move standalone catalog and report helpers behind discovery and the read executor. Retrieval with extras now uses `record` instead of `document`; preparation returns a directly callable `creation` object.
+- Document the v5 migration and version-pinning path. The legacy profile retains its 71 direct endpoint tools; it does not restore v5 compact helpers.
+
+### Added
+
+- Reference-resolving preparation for quotations, purchases, and AdvancePayment/DebtPayment customer cash receipts, alongside invoices. Missing or ambiguous references return unresolved choices without a creation payload.
+- One creation tool for all eight document kinds, preserving exact endpoint validation, supported idempotency keys, upstream errors, and cancellation.
+- Discoverable preparation schemas and document creation payload schemas without advertising every write contract up front. Shared search filter definitions reduce the initial eight-tool catalog to about 18 KB of serialized JSON, approximately 95% smaller than the legacy catalog.
+- Search across all documented searchable accounting document families; customer/product retrieval and optional invoice DIAN errors in the record tool.
+- Mocked workflow, routing, schema coverage, pagination ambiguity, unsupported idempotency, error, and cancellation regressions.
+
+### Compatibility
+
+- Preserve the TypeScript client, endpoint contracts, legacy tool names, and transport configuration. See [the migration guide](docs/COMPACT_TOOLS.md).
+- Preparation checks selected references and local contracts. It does not calculate totals, verify accounting accounts or debt balances, or provide an upstream dry run.
+
 ## [5.3.0] - 2026-09-15
 
 ### Changed

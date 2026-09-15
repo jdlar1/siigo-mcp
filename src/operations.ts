@@ -1,5 +1,6 @@
 import type { CallToolResult, ServerContext } from '@modelcontextprotocol/server';
 import { z } from 'zod';
+import { documentTasks, preparationKindSchema } from './document-tasks.js';
 import type { SiigoClient } from './siigo-client.js';
 import type { OperationConfig, ToolContext, ToolRegistrar } from './tool-context.js';
 
@@ -144,14 +145,48 @@ export class OperationRegistry {
     return {
       domain,
       total: operations.length,
-      operations: operations.slice(0, limit).map((op) => ({
-        operation: op.name,
-        description: op.description,
-        executor: `siigo_execute_${kindOf(op)}`,
-        annotations: op.annotations,
-        inputSchema: z.toJSONSchema(op.inputSchema, { io: 'input' }),
-        outputSchema: z.toJSONSchema(op.outputSchema),
-      })),
+      operations: await Promise.all(
+        operations.slice(0, limit).map(async (op) => {
+          const task = Object.entries(documentTasks).find(([, route]) => route.domain === domain && route.operation === op.name);
+          let workflow = {};
+          if (task) {
+            const [type, route] = task;
+            if (!(op.inputSchema instanceof z.ZodObject))
+              throw new Error(`Document operation '${op.name}' must have an object input schema.`);
+            const payloadSchema = op.inputSchema.shape[route.field];
+            if (!payloadSchema) throw new Error(`Missing document field '${route.field}' for '${op.name}'.`);
+            workflow = {
+              creation: {
+                tool: 'siigo_create_document',
+                type,
+                payloadSchema: z.toJSONSchema(payloadSchema, { io: 'input' }),
+                supports_idempotency_key: 'idempotency_key' in op.inputSchema.shape,
+              },
+              ...(route.prepare
+                ? {
+                    preparation: {
+                      tool: 'siigo_prepare_document',
+                      type,
+                      inputSchema: z.toJSONSchema(
+                        (await import('./schemas/prepare-document.js')).preparationSchemas[preparationKindSchema.parse(type)],
+                        { io: 'input' },
+                      ),
+                    },
+                  }
+                : {}),
+            };
+          }
+          return {
+            operation: op.name,
+            description: op.description,
+            executor: `siigo_execute_${kindOf(op)}`,
+            annotations: op.annotations,
+            inputSchema: z.toJSONSchema(op.inputSchema, { io: 'input' }),
+            outputSchema: z.toJSONSchema(op.outputSchema),
+            ...workflow,
+          };
+        }),
+      ),
     };
   }
 
