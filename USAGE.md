@@ -106,7 +106,10 @@ For other MCP clients, use either:
 
 ## Available Tools
 
-The default compact profile exposes 10 tools with access to all supported operations.
+See the [v6 tool catalog and migration guide](docs/COMPACT_TOOLS.md) for preparation,
+creation, record retrieval, and on-demand catalog/report examples.
+
+The default compact profile exposes eight tools with access to all supported operations.
 The names below are available directly with `SIIGO_TOOL_PROFILE=legacy`, or through
 discovery and execution in compact mode:
 
@@ -132,7 +135,7 @@ Discover the create operation in the customers domain, then use siigo_execute_wr
 
 ### Generate Invoice
 ```
-Use siigo_create_invoice with document type, customer, items, and payment information
+Use siigo_prepare_document with type invoice, inspect the returned creation payload, then pass it to siigo_create_document
 ```
 
 For detailed API documentation, see the main README.md file.

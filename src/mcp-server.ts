@@ -1,13 +1,11 @@
 import { type CallToolResult, McpServer, type ServerContext } from '@modelcontextprotocol/server';
 import { z } from 'zod';
+import { documentTasks } from './document-tasks.js';
 import { errorResult, jsonResult } from './mcp-results.js';
 import { OperationRegistry, operationDomainSchema } from './operations.js';
-import { paginationQuerySchema, positiveIntegerSchema } from './schemas/common.js';
-import { customerListQuerySchema, customerSearchSchema } from './schemas/customers.js';
-import { invoiceCreateInputSchema, invoiceEntityToolOutputSchema, invoiceListQuerySchema } from './schemas/invoices.js';
-import { prepareInvoiceSchema } from './schemas/prepare-invoice.js';
-import { productListQuerySchema, productSearchSchema } from './schemas/products.js';
-import { accountsPayableQuerySchema, trialBalanceByThirdSchema, trialBalanceSchema } from './schemas/reports.js';
+import { positiveIntegerSchema } from './schemas/common.js';
+import { createDocumentSchema, prepareDocumentOutputSchema, prepareDocumentSchema } from './schemas/document-tasks.js';
+import { searchSchema } from './schemas/search.js';
 import type { SiigoClient } from './siigo-client.js';
 import { PACKAGE_NAME, PACKAGE_VERSION } from './version.js';
 
@@ -26,7 +24,9 @@ function handle(name: string, callback: () => Promise<CallToolResult>): Promise<
   return callback().catch((error: unknown) => errorResult(name, error));
 }
 
-const documentOperations = {
+const recordOperations = {
+  customer: ['customers', 'siigo_get_customer'],
+  product: ['products', 'siigo_get_product'],
   invoice: ['invoices', 'siigo_get_invoice'],
   quotation: ['quotations', 'siigo_get_quotation'],
   credit_note: ['credit_notes', 'siigo_get_credit_note'],
@@ -52,20 +52,8 @@ export function createMcpServer(client: SiigoClient, options: McpServerOptions =
     {
       title: 'Search Siigo',
       description:
-        'Find customers, products or sales invoices. List mode uses API filters and pagination; partial mode scans customers/products and can require many API requests.',
-      inputSchema: z
-        .object({
-          query: z
-            .discriminatedUnion('entity', [
-              z.object({ entity: z.literal('customers'), mode: z.literal('list'), filters: customerListQuerySchema }).strict(),
-              z.object({ entity: z.literal('products'), mode: z.literal('list'), filters: productListQuerySchema }).strict(),
-              z.object({ entity: z.literal('invoices'), mode: z.literal('list'), filters: invoiceListQuerySchema }).strict(),
-              z.object({ entity: z.literal('customer_matches'), mode: z.literal('partial'), filters: customerSearchSchema }).strict(),
-              z.object({ entity: z.literal('product_matches'), mode: z.literal('partial'), filters: productSearchSchema }).strict(),
-            ])
-            .describe('Entity and its supported filters'),
-        })
-        .strict(),
+        'Find customers/suppliers, products and supported accounting documents. Returns candidates and pagination; never selects a match. Use siigo_get_record with a selected UUID. List uses exact API filters; partial customer/product searches may scan many pages. Suppliers are customers with type Supplier.',
+      inputSchema: searchSchema,
       outputSchema: flexibleOutput,
       annotations: readAnnotations,
     },
@@ -75,6 +63,12 @@ export function createMcpServer(client: SiigoClient, options: McpServerOptions =
           customers: ['customers', 'siigo_get_customers'],
           products: ['products', 'siigo_get_products'],
           invoices: ['invoices', 'siigo_get_invoices'],
+          payment_receipts: ['payment_receipts', 'siigo_get_payment_receipts'],
+          journals: ['journals', 'siigo_get_journals'],
+          credit_notes: ['credit_notes', 'siigo_get_credit_notes'],
+          vouchers: ['vouchers', 'siigo_get_vouchers'],
+          purchases: ['purchases', 'siigo_get_purchases'],
+          quotations: ['quotations', 'siigo_get_quotations'],
           customer_matches: ['customers', 'siigo_search_customers'],
           product_matches: ['products', 'siigo_search_products'],
         } as const;
@@ -84,16 +78,29 @@ export function createMcpServer(client: SiigoClient, options: McpServerOptions =
   );
 
   server.registerTool(
-    'siigo_get_document',
+    'siigo_get_record',
     {
-      title: 'Get Document',
-      description: 'Read an accounting document by UUID. Invoice PDF/XML and credit-note PDF can be requested in the same call.',
+      title: 'Get Record',
+      description:
+        'Inspect a customer, product or accounting document by a selected UUID from siigo_search. Optionally include invoice PDF/XML, credit-note PDF or invoice DIAN stamp errors. Unsupported extras are rejected before any read.',
       inputSchema: z
         .object({
           type: z
-            .enum(['invoice', 'quotation', 'credit_note', 'voucher', 'purchase', 'purchase_support_document', 'payment_receipt', 'journal'])
-            .describe('Document kind'),
-          id: z.uuid().describe('Document UUID'),
+            .enum([
+              'customer',
+              'product',
+              'invoice',
+              'quotation',
+              'credit_note',
+              'voucher',
+              'purchase',
+              'purchase_support_document',
+              'payment_receipt',
+              'journal',
+            ])
+            .describe('Record kind'),
+          id: z.uuid().describe('Selected record UUID'),
+          include_stamp_errors: z.boolean().default(false).describe('Include DIAN rejection details; invoices only.'),
           files: z
             .array(z.enum(['pdf', 'xml']))
             .max(2)
@@ -104,132 +111,70 @@ export function createMcpServer(client: SiigoClient, options: McpServerOptions =
       outputSchema: flexibleOutput,
       annotations: readAnnotations,
     },
-    async ({ type, id, files }, ctx) =>
-      handle('siigo_get_document', async () => {
+    async ({ type, id, files, include_stamp_errors }, ctx) =>
+      handle('siigo_get_record', async () => {
         if (files.some((file) => type !== 'invoice' && !(type === 'credit_note' && file === 'pdf')))
           throw new Error('Requested file format is not supported for this document type.');
-        const [domain, operation] = documentOperations[type];
+        if (include_stamp_errors && type !== 'invoice') throw new Error('Stamp errors are supported only for invoices.');
+        const [domain, operation] = recordOperations[type];
         const document = await operations.execute(domain, operation, 'read', { id }, ctx);
-        if (document.isError || !files.length) return document;
+        if (document.isError || (!files.length && !include_stamp_errors)) return document;
         const attachments: Record<string, unknown> = {};
         for (const file of new Set(files)) {
           const result = await operations.execute(domain, `${operation}_${file}`, 'read', { id }, ctx);
           if (result.isError) return result;
           attachments[file] = unwrap(result);
         }
-        return jsonResult({ document: unwrap(document), files: attachments });
-      }),
-  );
-
-  server.registerTool(
-    'siigo_get_catalogs',
-    {
-      title: 'Get Catalogs',
-      description: 'Fetch selected reference catalogs together. Payment types require document_type. Only requested catalogs are fetched.',
-      inputSchema: z
-        .object({
-          catalogs: z
-            .array(
-              z.enum([
-                'document_types',
-                'taxes',
-                'payment_types',
-                'cost_centers',
-                'users',
-                'warehouses',
-                'price_lists',
-                'fixed_assets',
-                'expenses',
-                'misc_income',
-              ]),
-            )
-            .min(1)
-            .max(10)
-            .describe('Catalogs needed for the current task'),
-          document_type: z
-            .enum(['FV', 'RC', 'NC', 'FC', 'CC', 'RP', 'C', 'DS'])
-            .optional()
-            .describe('Document type for payment methods and document types'),
-          page: paginationQuerySchema.shape.page,
-          page_size: paginationQuerySchema.shape.page_size,
-        })
-        .strict(),
-      outputSchema: flexibleOutput,
-      annotations: readAnnotations,
-    },
-    async ({ catalogs, document_type, page, page_size }, ctx) =>
-      handle('siigo_get_catalogs', async () => {
-        if (catalogs.includes('payment_types') && !document_type) throw new Error('document_type is required for payment_types.');
-        const results: Record<string, unknown> = {};
-        for (const catalog of new Set(catalogs)) {
-          const args =
-            catalog === 'payment_types'
-              ? { document_type }
-              : catalog === 'document_types'
-                ? { type: document_type }
-                : catalog === 'users'
-                  ? { page, page_size }
-                  : {};
-          const result = await operations.execute('catalogs', `siigo_get_${catalog}`, 'read', args, ctx);
-          if (result.isError) return result;
-          results[catalog] = unwrap(result);
+        if (include_stamp_errors) {
+          const errors = await operations.execute('invoices', 'siigo_get_invoice_stamp_errors', 'read', { id }, ctx);
+          if (errors.isError) return errors;
+          return jsonResult({ record: unwrap(document), files: attachments, stamp_errors: unwrap(errors) });
         }
-        return jsonResult(results);
+        return jsonResult({ record: unwrap(document), files: attachments });
       }),
   );
 
   server.registerTool(
-    'siigo_prepare_invoice',
+    'siigo_prepare_document',
     {
-      title: 'Prepare Invoice',
+      title: 'Prepare Document',
       description:
-        'Prepare a common sales invoice without writing. Resolve exact customer/product references and validate selected document, tax and payment IDs. Ambiguities are returned for selection. Prices and amounts must be supplied; advanced invoice fields use siigo_create_invoice.',
-      inputSchema: prepareInvoiceSchema,
-      outputSchema: flexibleOutput,
+        'Prepare an invoice, quotation, purchase or customer cash receipt without writing. Discover the create operation for preparation.inputSchema. Resolve exact party/product references and selected catalogs; return unresolved choices or a creation object for siigo_create_document. Prices, amounts and debt references must be supplied. Does not check accounting accounts, debt balances or totals.',
+      inputSchema: prepareDocumentSchema,
+      outputSchema: prepareDocumentOutputSchema,
       annotations: readAnnotations,
     },
-    async (args, ctx) =>
-      handle('siigo_prepare_invoice', async () => {
-        const { prepareInvoice } = await import('./tasks/prepare-invoice.js');
-        return jsonResult(await prepareInvoice(client, args, ctx.mcpReq.signal));
+    async ({ type, input }, ctx) =>
+      handle('siigo_prepare_document', async () => {
+        const { prepareDocument } = await import('./tasks/prepare-document.js');
+        return jsonResult(await prepareDocument(client, type, input, ctx.mcpReq.signal));
       }),
   );
 
   server.registerTool(
-    'siigo_create_invoice',
+    'siigo_create_document',
     {
-      title: 'Create Invoice',
+      title: 'Create Document',
       description:
-        'Create a sales invoice using a prepared or complete payload. Supports advanced fields and an optional idempotency key. This writes to Siigo.',
-      inputSchema: invoiceCreateInputSchema,
-      outputSchema: invoiceEntityToolOutputSchema,
+        'Create one accounting document in Siigo. Preferred document creation route: pass preparation.creation or use discovery creation.payloadSchema for a complete payload. Exact endpoint validation applies. Only invoices, credit notes, journals and vouchers support idempotency_key. Use siigo_execute_write for updates, sending and other advanced writes.',
+      inputSchema: createDocumentSchema,
+      outputSchema: flexibleOutput,
       annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: true },
     },
-    async (args, ctx) => handle('siigo_create_invoice', () => operations.execute('invoices', 'siigo_create_invoice', 'write', args, ctx)),
-  );
-
-  server.registerTool(
-    'siigo_get_report',
-    {
-      title: 'Get Report',
-      description:
-        'Generate a trial balance (optionally by third party), or retrieve accounts payable. Exact operation validation is applied before the API call.',
-      inputSchema: z
-        .object({
-          request: z
-            .discriminatedUnion('report', [
-              z.object({ report: z.literal('trial_balance'), filters: trialBalanceSchema }).strict(),
-              z.object({ report: z.literal('trial_balance_by_third'), filters: trialBalanceByThirdSchema }).strict(),
-              z.object({ report: z.literal('accounts_payable'), filters: accountsPayableQuerySchema }).strict(),
-            ])
-            .describe('Report and filters'),
-        })
-        .strict(),
-      outputSchema: flexibleOutput,
-      annotations: readAnnotations,
-    },
-    async ({ request }, ctx) =>
-      handle('siigo_get_report', () => operations.execute('reports', `siigo_get_${request.report}`, 'read', request.filters, ctx)),
+    async ({ type, payload, idempotency_key }, ctx) =>
+      handle('siigo_create_document', () => {
+        const route = documentTasks[type];
+        return operations.execute(
+          route.domain,
+          route.operation,
+          'write',
+          {
+            [route.field]: payload,
+            ...(idempotency_key === undefined ? {} : { idempotency_key }),
+          },
+          ctx,
+        );
+      }),
   );
 
   server.registerTool(
@@ -237,7 +182,7 @@ export function createMcpServer(client: SiigoClient, options: McpServerOptions =
     {
       title: 'Discover Operations',
       description:
-        'Without a domain, list matching domains. With a domain, return matching secondary operations and their exact input/output schemas. Use a returned executor with the same domain and operation. Does not change tools/list.',
+        'Find advanced operations, catalogs and reports. Without a domain, list matching domains; with a domain, return exact input/output schemas and executors. Document create operations also include creation payload schemas and supported preparation schemas. Prefer siigo_prepare_document/siigo_create_document for documents. Does not call Siigo or change tools/list.',
       inputSchema: z
         .object({
           domain: operationDomainSchema.optional().describe('Domain to load; omit to list domains'),
@@ -260,7 +205,7 @@ export function createMcpServer(client: SiigoClient, options: McpServerOptions =
       name,
       {
         title: `Execute ${kind} Operation`,
-        description: `Execute a discovered ${kind} operation. Discover its exact schema first. Operations in other categories are rejected before any API call.`,
+        description: `Execute a discovered ${kind} operation. Discover its exact schema first. Prefer siigo_search/siigo_get_record for common reads and siigo_create_document for document creation. Operations in other categories are rejected before any API call.`,
         inputSchema: z
           .object({
             domain: operationDomainSchema.describe('Domain from discovery'),

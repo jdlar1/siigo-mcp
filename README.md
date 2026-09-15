@@ -6,7 +6,7 @@ A Model Context Protocol (MCP) server that provides full integration with the Si
   <img width="380" height="200" src="https://glama.ai/mcp/servers/@jdlar1/siigo-mcp/badge" alt="Siigo MCP Server" />
 </a>
 
-**v5.3.0** — Node 24 or newer, MCP SDK v2, 10 task-oriented tools with on-demand access to 71 operations, strict current Siigo contracts, Resolution 948 healthcare support, full sales and accounting resources, safe retries/idempotency, MCP cancellation, and public TypeScript/Zod interfaces. This release updates Node engine compatibility, package documentation, and CI and release instructions for the `main` default branch.
+**v6.0.0** — Eight task-oriented tools with on-demand access to all 71 operations. Prepare invoices, quotations, purchases, and cash receipts; create all eight document kinds through one validated tool. Search and inspect records, with separate read, write, and destructive executors. Requires Node 24 or newer. See the [v6 migration guide](docs/COMPACT_TOOLS.md#migration-from-v5).
 
 ## Features
 
@@ -164,9 +164,10 @@ Supported subpath exports are `client`, `contracts`, `server`, `legacy-server`, 
 
 ## Task-oriented tools
 
-The default catalog exposes search, document retrieval, catalog lookup, invoice preparation
-and creation, reports, operation discovery, and separate read/write/destructive executors.
-Secondary operation schemas are retrieved on demand, and their code loads by domain.
+The default catalog exposes eight tools: search, record retrieval, document preparation
+and creation, operation discovery, and separate read/write/destructive executors.
+Catalogs, reports, advanced operation schemas, and document workflow schemas are retrieved
+on demand. Secondary handlers load by domain.
 
 See [compact tools and migration](docs/COMPACT_TOOLS.md) for the complete initial catalog,
 examples, compatibility options, and validation boundaries.
@@ -175,7 +176,7 @@ examples, compatibility options, and validation boundaries.
 
 The following names are directly callable with `SIIGO_TOOL_PROFILE=legacy`.
 In the default compact profile, use `siigo_discover_operations` and the returned
-executor for these operations (invoice creation is also a primary tool).
+executor for these operations. Prefer `siigo_create_document` for document creation.
 
 ### Products (6 tools)
 | Tool | Description | Annotations |
@@ -322,6 +323,9 @@ executor for these operations (invoice creation is also a primary tool).
 | `DS` | Documento Soporte | Purchase Support Document | Full CRUD |
 
 ## Example Usage
+
+The examples below use direct operation names available in the legacy profile.
+For default v6 tool calls, see the [workflow examples](docs/COMPACT_TOOLS.md).
 
 ### Create a Quotation
 ```json
