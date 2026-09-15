@@ -27,7 +27,7 @@ export function registerReportTools({ server, client }: ToolContext) {
     },
     async (args, extra) => {
       try {
-        return jsonResult(await client.getTrialBalance(args, { signal: extra.signal }));
+        return jsonResult(await client.getTrialBalance(args, { signal: extra.mcpReq.signal }));
       } catch (error) {
         return errorResult('siigo_get_trial_balance', error);
       }
@@ -45,7 +45,7 @@ export function registerReportTools({ server, client }: ToolContext) {
     },
     async (args, extra) => {
       try {
-        return jsonResult(await client.getTrialBalanceByThird(args, { signal: extra.signal }));
+        return jsonResult(await client.getTrialBalanceByThird(args, { signal: extra.mcpReq.signal }));
       } catch (error) {
         return errorResult('siigo_get_trial_balance_by_third', error);
       }
@@ -63,7 +63,7 @@ export function registerReportTools({ server, client }: ToolContext) {
     },
     async (args, extra) => {
       try {
-        return jsonResult(await client.getAccountsPayable(args, { signal: extra.signal }));
+        return jsonResult(await client.getAccountsPayable(args, { signal: extra.mcpReq.signal }));
       } catch (error) {
         return errorResult('siigo_get_accounts_payable', error);
       }

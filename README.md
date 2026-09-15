@@ -2,13 +2,13 @@
 
 A Model Context Protocol (MCP) server that provides full integration with the Siigo API, enabling access to Colombian accounting software features including products, customers, invoices, quotations, purchases, credit notes, vouchers, payment receipts, journals, webhooks, and more.
 
-**v4.0.0** — 71 verified tools, strict current Siigo contracts, Resolution 948 healthcare support, full sales and accounting resources, safe retries/idempotency, MCP cancellation, and public TypeScript/Zod interfaces.
+**v5.0.0 (unreleased)** — Node 24 LTS, MCP SDK v2, 10 task-oriented tools with on-demand access to 71 operations, strict current Siigo contracts, Resolution 948 healthcare support, full sales and accounting resources, safe retries/idempotency, MCP cancellation, and public TypeScript/Zod interfaces.
 
 ## Features
 
 This MCP server covers the current documented Siigo Colombia API surface listed in [the coverage matrix](docs/API_COVERAGE.md). Source conflicts are resolved using the published [source-of-truth policy](docs/SOURCE_OF_TRUTH.md).
 
-It is intentionally broader than [Siigo's official MCP](https://developers.siigo.com/docs/siigoapi/MCP/1-documentation/), whose current documentation lists read operations for products, create/read/update for customers, and create/read for sales invoices. This server covers 15 Siigo resource families through 71 tools, including accounting, purchasing, catalogs, reports, webhooks, and the extended invoice lifecycle.
+It is intentionally broader than [Siigo's official MCP](https://developers.siigo.com/docs/siigoapi/MCP/1-documentation/), whose current documentation lists read operations for products, create/read/update for customers, and create/read for sales invoices. This server covers 15 Siigo resource families through 71 operations, including accounting, purchasing, catalogs, reports, webhooks, and the extended invoice lifecycle.
 
 ### Core Resources
 - **Products**: Full CRUD for products, services, consumer goods, and **Combo** products with components
@@ -37,6 +37,8 @@ It is intentionally broader than [Siigo's official MCP](https://developers.siigo
 - Accounts payable reports
 
 ## Installation
+
+Requires Node 24 LTS. For local development, run `nvm use` before installing dependencies.
 
 ### Option 1: NPX (Recommended - No Installation Required)
 ```bash
@@ -75,6 +77,7 @@ cp .env.example .env
 |---|---|---|
 | `SIIGO_BASE_URL` | `https://api.siigo.com` | API base URL |
 | `SIIGO_REQUESTS_PER_MINUTE` | `100` | Client-side requests per rolling minute (1-100); set `10` for Siigo test companies |
+| `SIIGO_TOOL_PROFILE` | `compact` | Task-oriented tools; set `legacy` for the previous direct tool catalog |
 | `MCP_TRANSPORT` | `stdio` | MCP transport: `stdio` or stateless Streamable HTTP (`http`) |
 | `MCP_HOST` | `127.0.0.1` | HTTP bind address |
 | `MCP_PORT` | `PORT` or `3000` | HTTP listening port |
@@ -100,7 +103,7 @@ The default transport remains stdio. To run a stateless HTTP endpoint locally:
 MCP_TRANSPORT=http pnpm start
 ```
 
-The endpoint is available at `http://127.0.0.1:3000/mcp`. Each POST uses a fresh MCP server and transport, does not issue an MCP session ID, and returns a JSON response instead of retaining an SSE session.
+The endpoint is available at `http://127.0.0.1:3000/mcp`. The SDK serves modern MCP requests and legacy stateless clients. Requests use separate MCP server instances with a shared, client-scoped lazy operation registry. Legacy requests retain JSON responses without MCP session IDs; modern requests use JSON or SSE according to protocol needs.
 
 For a network-accessible deployment, set an explicit bearer token:
 
@@ -136,7 +139,7 @@ Add to your Claude Desktop config (`claude_desktop_config.json`):
 
 ## TypeScript library API
 
-v4 exposes a side-effect-free library entrypoint as well as the executable:
+The package exposes a side-effect-free library entrypoint as well as the executable:
 
 ```ts
 import { SiigoClient, type SiigoInvoiceInput } from '@jdlar/siigo-mcp';
@@ -153,9 +156,22 @@ const invoice: SiigoInvoiceInput = invoiceSchemas.invoiceInputSchema.parse(input
 const created = await client.createInvoice(invoice, { idempotencyKey: 'Invoice2026082601' });
 ```
 
-Supported subpath exports are `client`, `contracts`, `server`, `http`, `results`, `schemas`, `types`, and `version`.
+Supported subpath exports are `client`, `contracts`, `server`, `legacy-server`, `http`, `results`, `schemas`, `types`, and `version`.
 
-## Available Tools (71 total)
+## Task-oriented tools
+
+The default catalog exposes search, document retrieval, catalog lookup, invoice preparation
+and creation, reports, operation discovery, and separate read/write/destructive executors.
+Secondary operation schemas are retrieved on demand, and their code loads by domain.
+
+See [compact tools and migration](docs/COMPACT_TOOLS.md) for the complete initial catalog,
+examples, compatibility options, and validation boundaries.
+
+## Legacy tools and discoverable operations
+
+The following names are directly callable with `SIIGO_TOOL_PROFILE=legacy`.
+In the default compact profile, use `siigo_discover_operations` and the returned
+executor for these operations (invoice creation is also a primary tool).
 
 ### Products (6 tools)
 | Tool | Description | Annotations |

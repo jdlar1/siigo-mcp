@@ -1,5 +1,8 @@
 # Siigo MCP Server Usage
 
+Requires Node 24 LTS. The default profile uses task-oriented tools; see
+[compact tools and migration](docs/COMPACT_TOOLS.md) for discovery and execution examples.
+
 ## Quick Start
 
 ### Option 1: NPX (Recommended - No Installation Required)
@@ -103,7 +106,9 @@ For other MCP clients, use either:
 
 ## Available Tools
 
-The server provides 71 verified tools for Siigo API integration:
+The default compact profile exposes 10 tools with access to all supported operations.
+The names below are available directly with `SIIGO_TOOL_PROFILE=legacy`, or through
+discovery and execution in compact mode:
 
 - **Products**: `siigo_get_products`, `siigo_create_product`, etc.
 - **Customers**: `siigo_get_customers`, `siigo_create_customer`, etc.  
@@ -117,12 +122,12 @@ See [docs/API_COVERAGE.md](docs/API_COVERAGE.md) for the route-by-route matrix a
 
 ### Get All Products
 ```
-Use the siigo_get_products tool to list all products
+Use siigo_search with query { entity: "products", mode: "list", filters: {} }; follow pagination
 ```
 
 ### Create a Customer
 ```
-Use siigo_create_customer with customer data including name, identification, address, phones, and contacts
+Discover the create operation in the customers domain, then use siigo_execute_write with its exact schema
 ```
 
 ### Generate Invoice

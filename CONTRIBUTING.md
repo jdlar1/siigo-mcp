@@ -4,6 +4,8 @@ Thanks for helping improve `@jdlar/siigo-mcp`.
 
 ## Local Setup
 
+Use Node 24 LTS (`nvm use`).
+
 ```bash
 pnpm install
 pnpm build
@@ -16,8 +18,8 @@ This project is ESM-first and uses TypeScript with explicit `.js` extensions in 
 
 - `src/cli.ts` validates runtime configuration and starts the selected MCP transport.
 - `src/index.ts` is the side-effect-free public library entrypoint.
-- `src/mcp-server.ts` creates the MCP server and registers each resource group.
-- `src/tools/*.ts` contains MCP tool registration by Siigo API resource.
+- `src/mcp-server.ts` registers the primary task-oriented tools.
+- `src/tools/*.ts` contains operation definitions reused by discovery/execution and the legacy tool catalog.
 - `src/schemas/*.ts` contains strict Zod request contracts and concrete response schemas.
 - `src/contracts.ts` exposes request and query types inferred from the Zod schemas.
 - `src/siigo-client.ts` owns HTTP calls, authentication, pagination helpers, and API error translation.
@@ -25,6 +27,10 @@ This project is ESM-first and uses TypeScript with explicit `.js` extensions in 
 - `test/*.test.js` tests the compiled output from `dist/`.
 
 ## Adding Or Updating Tools
+
+New endpoints do not require new primary tools. Add an operation to its domain;
+only promote frequent user tasks to the compact catalog. Keep secondary imports
+lazy and reuse the original schemas and annotations instead of copying contracts.
 
 - Keep public MCP tool names stable unless a breaking change is intentional.
 - Add endpoint HTTP logic to `SiigoClient`; keep MCP handlers thin.

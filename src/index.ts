@@ -2,6 +2,7 @@ export type * from './contracts.js';
 export type { HttpServerOptions } from './http-server.js';
 export { createHttpApp } from './http-server.js';
 export { errorResult, jsonResult } from './mcp-results.js';
+export type { McpServerOptions } from './mcp-server.js';
 export { createMcpServer } from './mcp-server.js';
 export { SiigoApiError, SiigoClient } from './siigo-client.js';
 export type { ToolContext } from './tool-context.js';

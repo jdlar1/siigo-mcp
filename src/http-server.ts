@@ -1,6 +1,8 @@
-import { createMcpExpressApp } from '@modelcontextprotocol/sdk/server/express.js';
-import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
+import { createMcpExpressApp } from '@modelcontextprotocol/express';
+import { NodeStreamableHTTPServerTransport, toNodeHandler, toWebRequest } from '@modelcontextprotocol/node';
+import { createMcpHandler, isLegacyRequest } from '@modelcontextprotocol/server';
 import { createMcpServer } from './mcp-server.js';
+import { OperationRegistry } from './operations.js';
 import type { SiigoClient } from './siigo-client.js';
 
 export interface HttpServerOptions {
@@ -8,6 +10,7 @@ export interface HttpServerOptions {
   host?: string;
   authToken?: string;
   allowedHosts?: string[];
+  toolProfile?: 'compact' | 'legacy';
 }
 
 const LOOPBACK_HOSTS = new Set(['127.0.0.1', 'localhost', '::1', '[::1]']);
@@ -38,7 +41,7 @@ function methodNotAllowedResult() {
   };
 }
 
-export function createHttpApp({ client, host = '127.0.0.1', authToken, allowedHosts }: HttpServerOptions) {
+export function createHttpApp({ client, host = '127.0.0.1', authToken, allowedHosts, toolProfile = 'compact' }: HttpServerOptions) {
   if (!isLoopbackHost(host) && !authToken) {
     throw new Error('authToken is required when the MCP HTTP server binds to a non-loopback host');
   }
@@ -54,46 +57,44 @@ export function createHttpApp({ client, host = '127.0.0.1', authToken, allowedHo
     next();
   });
 
+  const operations = new OperationRegistry(client);
+  const factory = async () => {
+    if (toolProfile === 'legacy') {
+      const { createLegacyMcpServer } = await import('./legacy-server.js');
+      return createLegacyMcpServer(client);
+    }
+    return createMcpServer(client, { operations });
+  };
+  const onerror = (error: unknown) => console.error('Error handling MCP request:', error);
+  const handler = createMcpHandler(factory, { legacy: 'reject', onerror });
+  const nodeHandler = toNodeHandler(handler, { onerror });
+  app.locals.closeMcp = () => handler.close();
   app.post('/mcp', async (req, res) => {
-    const server = createMcpServer(client);
-    const transport = new StreamableHTTPServerTransport({
-      sessionIdGenerator: undefined,
-      enableJsonResponse: true,
-    });
+    // Preserve JSON responses for existing 2025 clients; modern traffic uses
+    // the SDK's per-request handler and its cancellation semantics.
+    if (!(await isLegacyRequest(await toWebRequest(req, req.body), req.body))) {
+      await nodeHandler(req, res, req.body);
+      return;
+    }
+    const server = await factory();
+    const transport = new NodeStreamableHTTPServerTransport({ sessionIdGenerator: undefined, enableJsonResponse: true });
     let closed = false;
-
-    const closeRequest = async () => {
-      if (closed) {
-        return;
-      }
-
+    const close = async () => {
+      if (closed) return;
       closed = true;
       await transport.close();
       await server.close();
     };
-
     res.on('close', () => {
-      void closeRequest();
+      void close().catch(onerror);
     });
-
     try {
       await server.connect(transport);
       await transport.handleRequest(req, res, req.body);
     } catch (error: unknown) {
-      console.error('Error handling MCP request:', error);
-
-      if (!res.headersSent) {
-        res.status(500).json({
-          jsonrpc: '2.0',
-          error: {
-            code: -32603,
-            message: 'Internal server error',
-          },
-          id: null,
-        });
-      }
-
-      await closeRequest();
+      onerror(error);
+      if (!res.headersSent) res.status(500).json({ jsonrpc: '2.0', id: null, error: { code: -32603, message: 'Internal server error' } });
+      await close();
     }
   });
 

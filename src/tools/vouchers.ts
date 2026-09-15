@@ -34,7 +34,7 @@ export function registerVoucherTools({ server, client }: ToolContext) {
     },
     async (args, extra) => {
       try {
-        return jsonResult(await client.getVouchers(args, { signal: extra.signal }));
+        return jsonResult(await client.getVouchers(args, { signal: extra.mcpReq.signal }));
       } catch (error) {
         return errorResult('siigo_get_vouchers', error);
       }
@@ -52,7 +52,7 @@ export function registerVoucherTools({ server, client }: ToolContext) {
     },
     async ({ id }, extra) => {
       try {
-        return jsonResult(await client.getVoucher(id, { signal: extra.signal }));
+        return jsonResult(await client.getVoucher(id, { signal: extra.mcpReq.signal }));
       } catch (error) {
         return errorResult('siigo_get_voucher', error);
       }
@@ -71,7 +71,7 @@ export function registerVoucherTools({ server, client }: ToolContext) {
     },
     async ({ voucher, idempotency_key }, extra) => {
       try {
-        const options = { idempotencyKey: idempotency_key, signal: extra.signal };
+        const options = { idempotencyKey: idempotency_key, signal: extra.mcpReq.signal };
         const result =
           voucher.type === 'MiscIncome'
             ? await client.createMiscIncomeVoucher(voucher, options)

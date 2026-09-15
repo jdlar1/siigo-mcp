@@ -1,7 +1,6 @@
 import { afterEach, describe, expect, test } from '@jest/globals';
-import { Client } from '@modelcontextprotocol/sdk/client/index.js';
-import { InMemoryTransport } from '@modelcontextprotocol/sdk/inMemory.js';
-import { createMcpServer } from '../dist/mcp-server.js';
+import { Client, InMemoryTransport } from '@modelcontextprotocol/client';
+import { createLegacyMcpServer as createMcpServer } from '../dist/legacy-server.js';
 import { deleteResponseSchema } from '../dist/schemas/common.js';
 import { journalSchema } from '../dist/schemas/journals.js';
 import {

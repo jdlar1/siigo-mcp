@@ -27,7 +27,7 @@ export function registerProductTools({ server, client }: ToolContext) {
     },
     async (args, extra) => {
       try {
-        return jsonResult(await client.getProducts(args, { signal: extra.signal }));
+        return jsonResult(await client.getProducts(args, { signal: extra.mcpReq.signal }));
       } catch (e) {
         return errorResult('siigo_get_products', e);
       }
@@ -45,7 +45,7 @@ export function registerProductTools({ server, client }: ToolContext) {
     },
     async ({ id }, extra) => {
       try {
-        return jsonResult(await client.getProduct(id, { signal: extra.signal }));
+        return jsonResult(await client.getProduct(id, { signal: extra.mcpReq.signal }));
       } catch (e) {
         return errorResult('siigo_get_product', e);
       }
@@ -63,7 +63,7 @@ export function registerProductTools({ server, client }: ToolContext) {
     },
     async ({ product }, extra) => {
       try {
-        return jsonResult(await client.createProduct(product, { signal: extra.signal }));
+        return jsonResult(await client.createProduct(product, { signal: extra.mcpReq.signal }));
       } catch (e) {
         return errorResult('siigo_create_product', e);
       }
@@ -81,7 +81,7 @@ export function registerProductTools({ server, client }: ToolContext) {
     },
     async ({ id, product }, extra) => {
       try {
-        return jsonResult(await client.updateProduct(id, product, { signal: extra.signal }));
+        return jsonResult(await client.updateProduct(id, product, { signal: extra.mcpReq.signal }));
       } catch (e) {
         return errorResult('siigo_update_product', e);
       }
@@ -99,7 +99,7 @@ export function registerProductTools({ server, client }: ToolContext) {
     },
     async ({ id }, extra) => {
       try {
-        return jsonResult(await client.deleteProduct(id, { signal: extra.signal }));
+        return jsonResult(await client.deleteProduct(id, { signal: extra.mcpReq.signal }));
       } catch (e) {
         return errorResult('siigo_delete_product', e);
       }
@@ -117,7 +117,7 @@ export function registerProductTools({ server, client }: ToolContext) {
     },
     async (args, extra) => {
       try {
-        return jsonResult(await client.searchProducts(args, { signal: extra.signal }));
+        return jsonResult(await client.searchProducts(args, { signal: extra.mcpReq.signal }));
       } catch (e) {
         return errorResult('siigo_search_products', e);
       }

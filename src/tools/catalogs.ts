@@ -36,7 +36,7 @@ export function registerCatalogTools({ server, client }: ToolContext) {
     },
     async ({ type }, extra) => {
       try {
-        return jsonResult(await client.getDocumentTypes(type, { signal: extra.signal }));
+        return jsonResult(await client.getDocumentTypes(type, { signal: extra.mcpReq.signal }));
       } catch (error) {
         return errorResult('siigo_get_document_types', error);
       }
@@ -54,7 +54,7 @@ export function registerCatalogTools({ server, client }: ToolContext) {
     },
     async (_, extra) => {
       try {
-        return jsonResult(await client.getTaxes({ signal: extra.signal }));
+        return jsonResult(await client.getTaxes({ signal: extra.mcpReq.signal }));
       } catch (error) {
         return errorResult('siigo_get_taxes', error);
       }
@@ -72,7 +72,7 @@ export function registerCatalogTools({ server, client }: ToolContext) {
     },
     async ({ document_type }, extra) => {
       try {
-        return jsonResult(await client.getPaymentTypes(document_type, { signal: extra.signal }));
+        return jsonResult(await client.getPaymentTypes(document_type, { signal: extra.mcpReq.signal }));
       } catch (error) {
         return errorResult('siigo_get_payment_types', error);
       }
@@ -90,7 +90,7 @@ export function registerCatalogTools({ server, client }: ToolContext) {
     },
     async (_, extra) => {
       try {
-        return jsonResult(await client.getCostCenters({ signal: extra.signal }));
+        return jsonResult(await client.getCostCenters({ signal: extra.mcpReq.signal }));
       } catch (error) {
         return errorResult('siigo_get_cost_centers', error);
       }
@@ -108,7 +108,7 @@ export function registerCatalogTools({ server, client }: ToolContext) {
     },
     async (args, extra) => {
       try {
-        return jsonResult(await client.getUsers(args, { signal: extra.signal }));
+        return jsonResult(await client.getUsers(args, { signal: extra.mcpReq.signal }));
       } catch (error) {
         return errorResult('siigo_get_users', error);
       }
@@ -126,7 +126,7 @@ export function registerCatalogTools({ server, client }: ToolContext) {
     },
     async (_, extra) => {
       try {
-        return jsonResult(await client.getWarehouses({ signal: extra.signal }));
+        return jsonResult(await client.getWarehouses({ signal: extra.mcpReq.signal }));
       } catch (error) {
         return errorResult('siigo_get_warehouses', error);
       }
@@ -144,7 +144,7 @@ export function registerCatalogTools({ server, client }: ToolContext) {
     },
     async (_, extra) => {
       try {
-        return jsonResult(await client.getPriceLists({ signal: extra.signal }));
+        return jsonResult(await client.getPriceLists({ signal: extra.mcpReq.signal }));
       } catch (error) {
         return errorResult('siigo_get_price_lists', error);
       }
@@ -162,7 +162,7 @@ export function registerCatalogTools({ server, client }: ToolContext) {
     },
     async (_, extra) => {
       try {
-        return jsonResult(await client.getFixedAssets({ signal: extra.signal }));
+        return jsonResult(await client.getFixedAssets({ signal: extra.mcpReq.signal }));
       } catch (error) {
         return errorResult('siigo_get_fixed_assets', error);
       }
@@ -180,7 +180,7 @@ export function registerCatalogTools({ server, client }: ToolContext) {
     },
     async (_, extra) => {
       try {
-        return jsonResult(await client.getExpenses({ signal: extra.signal }));
+        return jsonResult(await client.getExpenses({ signal: extra.mcpReq.signal }));
       } catch (error) {
         return errorResult('siigo_get_expenses', error);
       }
@@ -198,7 +198,7 @@ export function registerCatalogTools({ server, client }: ToolContext) {
     },
     async (_, extra) => {
       try {
-        return jsonResult(await client.getMiscIncome({ signal: extra.signal }));
+        return jsonResult(await client.getMiscIncome({ signal: extra.mcpReq.signal }));
       } catch (error) {
         return errorResult('siigo_get_misc_income', error);
       }

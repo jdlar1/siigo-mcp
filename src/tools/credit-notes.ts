@@ -25,7 +25,7 @@ export function registerCreditNoteTools({ server, client }: ToolContext) {
     },
     async (args, extra) => {
       try {
-        return jsonResult(await client.getCreditNotes(args, { signal: extra.signal }));
+        return jsonResult(await client.getCreditNotes(args, { signal: extra.mcpReq.signal }));
       } catch (e) {
         return errorResult('siigo_get_credit_notes', e);
       }
@@ -43,7 +43,7 @@ export function registerCreditNoteTools({ server, client }: ToolContext) {
     },
     async ({ id }, extra) => {
       try {
-        return jsonResult(await client.getCreditNote(id, { signal: extra.signal }));
+        return jsonResult(await client.getCreditNote(id, { signal: extra.mcpReq.signal }));
       } catch (e) {
         return errorResult('siigo_get_credit_note', e);
       }
@@ -62,7 +62,7 @@ export function registerCreditNoteTools({ server, client }: ToolContext) {
     },
     async ({ creditNote, idempotency_key }, extra) => {
       try {
-        return jsonResult(await client.createCreditNote(creditNote, { idempotencyKey: idempotency_key, signal: extra.signal }));
+        return jsonResult(await client.createCreditNote(creditNote, { idempotencyKey: idempotency_key, signal: extra.mcpReq.signal }));
       } catch (e) {
         return errorResult('siigo_create_credit_note', e);
       }
@@ -80,7 +80,7 @@ export function registerCreditNoteTools({ server, client }: ToolContext) {
     },
     async ({ id }, extra) => {
       try {
-        return jsonResult(await client.getCreditNotePdf(id, { signal: extra.signal }));
+        return jsonResult(await client.getCreditNotePdf(id, { signal: extra.mcpReq.signal }));
       } catch (e) {
         return errorResult('siigo_get_credit_note_pdf', e);
       }

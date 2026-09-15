@@ -24,7 +24,7 @@ export function registerAccountGroupTools({ server, client }: ToolContext) {
     },
     async (_args, extra) => {
       try {
-        return jsonResult(await client.getAccountGroups({ signal: extra.signal }));
+        return jsonResult(await client.getAccountGroups({ signal: extra.mcpReq.signal }));
       } catch (e) {
         return errorResult('siigo_get_account_groups', e);
       }
@@ -42,7 +42,7 @@ export function registerAccountGroupTools({ server, client }: ToolContext) {
     },
     async (args, extra) => {
       try {
-        return jsonResult(await client.createAccountGroup(args, { signal: extra.signal }));
+        return jsonResult(await client.createAccountGroup(args, { signal: extra.mcpReq.signal }));
       } catch (e) {
         return errorResult('siigo_create_account_group', e);
       }
@@ -60,7 +60,7 @@ export function registerAccountGroupTools({ server, client }: ToolContext) {
     },
     async ({ id, code, name }, extra) => {
       try {
-        return jsonResult(await client.updateAccountGroup(id, { code, name }, { signal: extra.signal }));
+        return jsonResult(await client.updateAccountGroup(id, { code, name }, { signal: extra.mcpReq.signal }));
       } catch (e) {
         return errorResult('siigo_update_account_group', e);
       }

@@ -1,12 +1,15 @@
 # Siigo Colombia API coverage
 
-Release: 4.0.0
+API contract baseline: 4.0.0
 Reconciled: 2026-08-26 (UTC)
-Public MCP tools: 71
+Covered operations: 71 (direct tools in the legacy profile)
+
+The compact profile exposes task tools and discovers these operations on demand.
+See [compact tools and migration](COMPACT_TOOLS.md).
 
 This matrix covers the current public Siigo Colombia API resources. Authentication is handled internally by the client and is not exposed as a tool. `siigo_search_products` and `siigo_search_customers` are MCP conveniences built on the corresponding paginated list endpoints.
 
-| Resource | Siigo route(s) | MCP operations | Tools |
+| Resource | Siigo route(s) | Operations | Count |
 | --- | --- | --- | ---: |
 | Products | `/v1/products`, `/v1/products/{id}` | list, get, create, replace, delete, paginated partial search | 6 |
 | Account groups | `/v1/account-groups`, `/v1/account-groups/{id}` | list, create, update | 3 |

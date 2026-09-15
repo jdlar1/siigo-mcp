@@ -34,7 +34,7 @@ export function registerInvoiceTools({ server, client }: ToolContext) {
     },
     async (args, extra) => {
       try {
-        return jsonResult(await client.getInvoices(args, { signal: extra.signal }));
+        return jsonResult(await client.getInvoices(args, { signal: extra.mcpReq.signal }));
       } catch (e) {
         return errorResult('siigo_get_invoices', e);
       }
@@ -52,7 +52,7 @@ export function registerInvoiceTools({ server, client }: ToolContext) {
     },
     async ({ id }, extra) => {
       try {
-        return jsonResult(await client.getInvoice(id, { signal: extra.signal }));
+        return jsonResult(await client.getInvoice(id, { signal: extra.mcpReq.signal }));
       } catch (e) {
         return errorResult('siigo_get_invoice', e);
       }
@@ -70,7 +70,7 @@ export function registerInvoiceTools({ server, client }: ToolContext) {
     },
     async ({ invoice, idempotency_key }, extra) => {
       try {
-        return jsonResult(await client.createInvoice(invoice, { idempotencyKey: idempotency_key, signal: extra.signal }));
+        return jsonResult(await client.createInvoice(invoice, { idempotencyKey: idempotency_key, signal: extra.mcpReq.signal }));
       } catch (e) {
         return errorResult('siigo_create_invoice', e);
       }
@@ -88,7 +88,7 @@ export function registerInvoiceTools({ server, client }: ToolContext) {
     },
     async ({ id, invoice }, extra) => {
       try {
-        return jsonResult(await client.updateInvoice(id, invoice, { signal: extra.signal }));
+        return jsonResult(await client.updateInvoice(id, invoice, { signal: extra.mcpReq.signal }));
       } catch (e) {
         return errorResult('siigo_update_invoice', e);
       }
@@ -106,7 +106,7 @@ export function registerInvoiceTools({ server, client }: ToolContext) {
     },
     async ({ id }, extra) => {
       try {
-        return jsonResult(await client.deleteInvoice(id, { signal: extra.signal }));
+        return jsonResult(await client.deleteInvoice(id, { signal: extra.mcpReq.signal }));
       } catch (e) {
         return errorResult('siigo_delete_invoice', e);
       }
@@ -124,7 +124,7 @@ export function registerInvoiceTools({ server, client }: ToolContext) {
     },
     async ({ id }, extra) => {
       try {
-        return jsonResult(await client.annulInvoice(id, { signal: extra.signal }));
+        return jsonResult(await client.annulInvoice(id, { signal: extra.mcpReq.signal }));
       } catch (e) {
         return errorResult('siigo_annul_invoice', e);
       }
@@ -142,7 +142,7 @@ export function registerInvoiceTools({ server, client }: ToolContext) {
     },
     async ({ id }, extra) => {
       try {
-        return jsonResult(await client.getInvoicePdf(id, { signal: extra.signal }));
+        return jsonResult(await client.getInvoicePdf(id, { signal: extra.mcpReq.signal }));
       } catch (e) {
         return errorResult('siigo_get_invoice_pdf', e);
       }
@@ -160,7 +160,7 @@ export function registerInvoiceTools({ server, client }: ToolContext) {
     },
     async ({ id }, extra) => {
       try {
-        return jsonResult(await client.getInvoiceXml(id, { signal: extra.signal }));
+        return jsonResult(await client.getInvoiceXml(id, { signal: extra.mcpReq.signal }));
       } catch (e) {
         return errorResult('siigo_get_invoice_xml', e);
       }
@@ -178,7 +178,7 @@ export function registerInvoiceTools({ server, client }: ToolContext) {
     },
     async ({ id }, extra) => {
       try {
-        return jsonResult(await client.getInvoiceStampErrors(id, { signal: extra.signal }));
+        return jsonResult(await client.getInvoiceStampErrors(id, { signal: extra.mcpReq.signal }));
       } catch (e) {
         return errorResult('siigo_get_invoice_stamp_errors', e);
       }
@@ -196,7 +196,7 @@ export function registerInvoiceTools({ server, client }: ToolContext) {
     },
     async ({ id, guid, mail_to, copy_to }, extra) => {
       try {
-        return jsonResult(await client.sendInvoiceByEmail(id, { guid, mail_to, copy_to }, { signal: extra.signal }));
+        return jsonResult(await client.sendInvoiceByEmail(id, { guid, mail_to, copy_to }, { signal: extra.mcpReq.signal }));
       } catch (e) {
         return errorResult('siigo_send_invoice_email', e);
       }
@@ -216,7 +216,7 @@ export function registerInvoiceTools({ server, client }: ToolContext) {
     },
     async ({ notification_url, invoices }, extra) => {
       try {
-        return jsonResult(await client.createInvoiceBatch({ notification_url, invoices }, { signal: extra.signal }));
+        return jsonResult(await client.createInvoiceBatch({ notification_url, invoices }, { signal: extra.mcpReq.signal }));
       } catch (e) {
         return errorResult('siigo_create_invoice_batch', e);
       }

@@ -48,7 +48,7 @@ export function registerPurchaseSupportDocumentTools({ server, client }: ToolCon
     },
     async ({ id }, extra) => {
       try {
-        return jsonResult(await client.getPurchaseSupportDocument(id, { signal: extra.signal }));
+        return jsonResult(await client.getPurchaseSupportDocument(id, { signal: extra.mcpReq.signal }));
       } catch (error) {
         return errorResult('siigo_get_purchase_support_document', error);
       }
@@ -66,7 +66,7 @@ export function registerPurchaseSupportDocumentTools({ server, client }: ToolCon
     },
     async ({ purchase_support_document }, extra) => {
       try {
-        return jsonResult(await client.createPurchaseSupportDocument(purchase_support_document, { signal: extra.signal }));
+        return jsonResult(await client.createPurchaseSupportDocument(purchase_support_document, { signal: extra.mcpReq.signal }));
       } catch (error) {
         return errorResult('siigo_create_purchase_support_document', error);
       }
@@ -84,7 +84,7 @@ export function registerPurchaseSupportDocumentTools({ server, client }: ToolCon
     },
     async ({ id, purchase_support_document }, extra) => {
       try {
-        return jsonResult(await client.updatePurchaseSupportDocument(id, purchase_support_document, { signal: extra.signal }));
+        return jsonResult(await client.updatePurchaseSupportDocument(id, purchase_support_document, { signal: extra.mcpReq.signal }));
       } catch (error) {
         return errorResult('siigo_update_purchase_support_document', error);
       }
@@ -102,7 +102,7 @@ export function registerPurchaseSupportDocumentTools({ server, client }: ToolCon
     },
     async ({ id }, extra) => {
       try {
-        return jsonResult(await client.deletePurchaseSupportDocument(id, { signal: extra.signal }));
+        return jsonResult(await client.deletePurchaseSupportDocument(id, { signal: extra.mcpReq.signal }));
       } catch (error) {
         return errorResult('siigo_delete_purchase_support_document', error);
       }

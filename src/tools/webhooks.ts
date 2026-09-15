@@ -50,7 +50,7 @@ export function registerWebhookTools({ server, client }: ToolContext) {
     },
     async (args, extra) => {
       try {
-        return jsonResult(await client.getWebhooks(args, { signal: extra.signal }));
+        return jsonResult(await client.getWebhooks(args, { signal: extra.mcpReq.signal }));
       } catch (error) {
         return errorResult('siigo_get_webhooks', error);
       }
@@ -68,7 +68,7 @@ export function registerWebhookTools({ server, client }: ToolContext) {
     },
     async (webhook, extra) => {
       try {
-        return jsonResult(await client.createWebhook(webhook, { signal: extra.signal }));
+        return jsonResult(await client.createWebhook(webhook, { signal: extra.mcpReq.signal }));
       } catch (error) {
         return errorResult('siigo_create_webhook', error);
       }
@@ -87,7 +87,7 @@ export function registerWebhookTools({ server, client }: ToolContext) {
     },
     async ({ id, ...webhook }, extra) => {
       try {
-        return jsonResult(await client.updateWebhook(id, webhook, { signal: extra.signal }));
+        return jsonResult(await client.updateWebhook(id, webhook, { signal: extra.mcpReq.signal }));
       } catch (error) {
         return errorResult('siigo_update_webhook', error);
       }
@@ -105,7 +105,7 @@ export function registerWebhookTools({ server, client }: ToolContext) {
     },
     async ({ id }, extra) => {
       try {
-        return jsonResult(await client.deleteWebhook(id, { signal: extra.signal }));
+        return jsonResult(await client.deleteWebhook(id, { signal: extra.mcpReq.signal }));
       } catch (error) {
         return errorResult('siigo_delete_webhook', error);
       }

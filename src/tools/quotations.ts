@@ -26,7 +26,7 @@ export function registerQuotationTools({ server, client }: ToolContext) {
     },
     async (args, extra) => {
       try {
-        return jsonResult(await client.getQuotations(args, { signal: extra.signal }));
+        return jsonResult(await client.getQuotations(args, { signal: extra.mcpReq.signal }));
       } catch (e) {
         return errorResult('siigo_get_quotations', e);
       }
@@ -44,7 +44,7 @@ export function registerQuotationTools({ server, client }: ToolContext) {
     },
     async ({ id }, extra) => {
       try {
-        return jsonResult(await client.getQuotation(id, { signal: extra.signal }));
+        return jsonResult(await client.getQuotation(id, { signal: extra.mcpReq.signal }));
       } catch (e) {
         return errorResult('siigo_get_quotation', e);
       }
@@ -62,7 +62,7 @@ export function registerQuotationTools({ server, client }: ToolContext) {
     },
     async ({ quotation }, extra) => {
       try {
-        return jsonResult(await client.createQuotation(quotation, { signal: extra.signal }));
+        return jsonResult(await client.createQuotation(quotation, { signal: extra.mcpReq.signal }));
       } catch (e) {
         return errorResult('siigo_create_quotation', e);
       }
@@ -80,7 +80,7 @@ export function registerQuotationTools({ server, client }: ToolContext) {
     },
     async ({ id, quotation }, extra) => {
       try {
-        return jsonResult(await client.updateQuotation(id, quotation, { signal: extra.signal }));
+        return jsonResult(await client.updateQuotation(id, quotation, { signal: extra.mcpReq.signal }));
       } catch (e) {
         return errorResult('siigo_update_quotation', e);
       }
@@ -98,7 +98,7 @@ export function registerQuotationTools({ server, client }: ToolContext) {
     },
     async ({ id }, extra) => {
       try {
-        return jsonResult(await client.deleteQuotation(id, { signal: extra.signal }));
+        return jsonResult(await client.deleteQuotation(id, { signal: extra.mcpReq.signal }));
       } catch (e) {
         return errorResult('siigo_delete_quotation', e);
       }

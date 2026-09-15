@@ -26,7 +26,7 @@ export function registerCustomerTools({ server, client }: ToolContext) {
     },
     async (args, extra) => {
       try {
-        return jsonResult(await client.getCustomers(args, { signal: extra.signal }));
+        return jsonResult(await client.getCustomers(args, { signal: extra.mcpReq.signal }));
       } catch (e) {
         return errorResult('siigo_get_customers', e);
       }
@@ -44,7 +44,7 @@ export function registerCustomerTools({ server, client }: ToolContext) {
     },
     async ({ id }, extra) => {
       try {
-        return jsonResult(await client.getCustomer(id, { signal: extra.signal }));
+        return jsonResult(await client.getCustomer(id, { signal: extra.mcpReq.signal }));
       } catch (e) {
         return errorResult('siigo_get_customer', e);
       }
@@ -62,7 +62,7 @@ export function registerCustomerTools({ server, client }: ToolContext) {
     },
     async ({ customer }, extra) => {
       try {
-        return jsonResult(await client.createCustomer(customer, { signal: extra.signal }));
+        return jsonResult(await client.createCustomer(customer, { signal: extra.mcpReq.signal }));
       } catch (e) {
         return errorResult('siigo_create_customer', e);
       }
@@ -80,7 +80,7 @@ export function registerCustomerTools({ server, client }: ToolContext) {
     },
     async ({ id, customer }, extra) => {
       try {
-        return jsonResult(await client.updateCustomer(id, customer, { signal: extra.signal }));
+        return jsonResult(await client.updateCustomer(id, customer, { signal: extra.mcpReq.signal }));
       } catch (e) {
         return errorResult('siigo_update_customer', e);
       }
@@ -98,7 +98,7 @@ export function registerCustomerTools({ server, client }: ToolContext) {
     },
     async (args, extra) => {
       try {
-        return jsonResult(await client.searchCustomers(args, { signal: extra.signal }));
+        return jsonResult(await client.searchCustomers(args, { signal: extra.mcpReq.signal }));
       } catch (e) {
         return errorResult('siigo_search_customers', e);
       }

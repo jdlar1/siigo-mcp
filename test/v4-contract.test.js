@@ -1,6 +1,5 @@
 import { afterEach, beforeEach, describe, expect, jest, test } from '@jest/globals';
-import { Client } from '@modelcontextprotocol/sdk/client/index.js';
-import { InMemoryTransport } from '@modelcontextprotocol/sdk/inMemory.js';
+import { Client, InMemoryTransport } from '@modelcontextprotocol/client';
 
 const mockAxiosInstance = {
   defaults: { headers: { common: {} } },
@@ -18,7 +17,7 @@ jest.unstable_mockModule('axios', () => ({
   default: mockAxios,
 }));
 
-const { createMcpServer } = await import('../dist/mcp-server.js');
+const { createLegacyMcpServer: createMcpServer } = await import('../dist/legacy-server.js');
 const { SiigoClient } = await import('../dist/siigo-client.js');
 const { creditNoteInputSchema, creditNoteResponseSchema } = await import('../dist/schemas/credit-notes.js');
 const { customerInputSchema } = await import('../dist/schemas/customers.js');

@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 import { pathToFileURL } from 'node:url';
-import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
+import { serveStdio } from '@modelcontextprotocol/server/stdio';
 import * as dotenv from 'dotenv';
 import { createHttpApp } from './http-server.js';
 import { createMcpServer } from './mcp-server.js';
@@ -52,6 +52,12 @@ export function getRequiredConfig(env: NodeJS.ProcessEnv): SiigoConfig {
   };
 }
 
+export function parseToolProfile(value: string | undefined): 'compact' | 'legacy' {
+  if (value === undefined || value === 'compact') return 'compact';
+  if (value === 'legacy') return 'legacy';
+  throw new Error('SIIGO_TOOL_PROFILE must be either compact or legacy');
+}
+
 function getPort(env: NodeJS.ProcessEnv): number {
   const rawPort = env.MCP_PORT ?? env.PORT ?? '3000';
   const port = Number(rawPort);
@@ -74,6 +80,7 @@ function getAllowedHosts(env: NodeJS.ProcessEnv): string[] | undefined {
 export async function main(env: NodeJS.ProcessEnv = process.env): Promise<void> {
   const config = getRequiredConfig(env);
   const client = new SiigoClient(config);
+  const toolProfile = parseToolProfile(env.SIIGO_TOOL_PROFILE);
   const transportType = env.MCP_TRANSPORT || 'stdio';
 
   if (transportType !== 'stdio' && transportType !== 'http') {
@@ -85,7 +92,13 @@ export async function main(env: NodeJS.ProcessEnv = process.env): Promise<void> 
     const port = getPort(env);
     const authToken = env.MCP_AUTH_TOKEN;
     const allowedHosts = getAllowedHosts(env);
-    const app = createHttpApp({ client, host, ...(authToken ? { authToken } : {}), ...(allowedHosts ? { allowedHosts } : {}) });
+    const app = createHttpApp({
+      client,
+      toolProfile,
+      host,
+      ...(authToken ? { authToken } : {}),
+      ...(allowedHosts ? { allowedHosts } : {}),
+    });
 
     app.listen(port, host, () => {
       console.error(`Siigo MCP listening on http://${host}:${port}/mcp`);
@@ -93,9 +106,10 @@ export async function main(env: NodeJS.ProcessEnv = process.env): Promise<void> 
     return;
   }
 
-  const server = createMcpServer(client);
-  const transport = new StdioServerTransport();
-  await server.connect(transport);
+  serveStdio(
+    async () => (toolProfile === 'legacy' ? (await import('./legacy-server.js')).createLegacyMcpServer(client) : createMcpServer(client)),
+    { onerror: (error) => console.error('MCP stdio error:', error) },
+  );
 }
 
 const entrypoint = process.argv[1] ? pathToFileURL(process.argv[1]).href : undefined;

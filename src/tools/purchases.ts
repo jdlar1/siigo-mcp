@@ -50,7 +50,7 @@ export function registerPurchaseTools({ server, client }: ToolContext) {
     },
     async (args, extra) => {
       try {
-        return jsonResult(await client.getPurchases(args, { signal: extra.signal }));
+        return jsonResult(await client.getPurchases(args, { signal: extra.mcpReq.signal }));
       } catch (error) {
         return errorResult('siigo_get_purchases', error);
       }
@@ -68,7 +68,7 @@ export function registerPurchaseTools({ server, client }: ToolContext) {
     },
     async ({ id }, extra) => {
       try {
-        return jsonResult(await client.getPurchase(id, { signal: extra.signal }));
+        return jsonResult(await client.getPurchase(id, { signal: extra.mcpReq.signal }));
       } catch (error) {
         return errorResult('siigo_get_purchase', error);
       }
@@ -86,7 +86,7 @@ export function registerPurchaseTools({ server, client }: ToolContext) {
     },
     async ({ purchase }, extra) => {
       try {
-        return jsonResult(await client.createPurchase(purchase, { signal: extra.signal }));
+        return jsonResult(await client.createPurchase(purchase, { signal: extra.mcpReq.signal }));
       } catch (error) {
         return errorResult('siigo_create_purchase', error);
       }
@@ -104,7 +104,7 @@ export function registerPurchaseTools({ server, client }: ToolContext) {
     },
     async ({ id, purchase }, extra) => {
       try {
-        return jsonResult(await client.updatePurchase(id, purchase, { signal: extra.signal }));
+        return jsonResult(await client.updatePurchase(id, purchase, { signal: extra.mcpReq.signal }));
       } catch (error) {
         return errorResult('siigo_update_purchase', error);
       }
@@ -122,7 +122,7 @@ export function registerPurchaseTools({ server, client }: ToolContext) {
     },
     async ({ id }, extra) => {
       try {
-        return jsonResult(await client.deletePurchase(id, { signal: extra.signal }));
+        return jsonResult(await client.deletePurchase(id, { signal: extra.mcpReq.signal }));
       } catch (error) {
         return errorResult('siigo_delete_purchase', error);
       }

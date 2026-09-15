@@ -50,7 +50,7 @@ export function registerPaymentReceiptTools({ server, client }: ToolContext) {
     },
     async (args, extra) => {
       try {
-        return jsonResult(await client.getPaymentReceipts(args, { signal: extra.signal }));
+        return jsonResult(await client.getPaymentReceipts(args, { signal: extra.mcpReq.signal }));
       } catch (error) {
         return errorResult('siigo_get_payment_receipts', error);
       }
@@ -68,7 +68,7 @@ export function registerPaymentReceiptTools({ server, client }: ToolContext) {
     },
     async ({ id }, extra) => {
       try {
-        return jsonResult(await client.getPaymentReceipt(id, { signal: extra.signal }));
+        return jsonResult(await client.getPaymentReceipt(id, { signal: extra.mcpReq.signal }));
       } catch (error) {
         return errorResult('siigo_get_payment_receipt', error);
       }
@@ -87,7 +87,7 @@ export function registerPaymentReceiptTools({ server, client }: ToolContext) {
     },
     async ({ paymentReceipt }, extra) => {
       try {
-        return jsonResult(await client.createPaymentReceipt(paymentReceipt, { signal: extra.signal }));
+        return jsonResult(await client.createPaymentReceipt(paymentReceipt, { signal: extra.mcpReq.signal }));
       } catch (error) {
         return errorResult('siigo_create_payment_receipt', error);
       }
@@ -105,7 +105,7 @@ export function registerPaymentReceiptTools({ server, client }: ToolContext) {
     },
     async ({ id, paymentReceipt }, extra) => {
       try {
-        return jsonResult(await client.updatePaymentReceipt(id, paymentReceipt, { signal: extra.signal }));
+        return jsonResult(await client.updatePaymentReceipt(id, paymentReceipt, { signal: extra.mcpReq.signal }));
       } catch (error) {
         return errorResult('siigo_update_payment_receipt', error);
       }
@@ -123,7 +123,7 @@ export function registerPaymentReceiptTools({ server, client }: ToolContext) {
     },
     async ({ id }, extra) => {
       try {
-        return jsonResult(await client.deletePaymentReceipt(id, { signal: extra.signal }));
+        return jsonResult(await client.deletePaymentReceipt(id, { signal: extra.mcpReq.signal }));
       } catch (error) {
         return errorResult('siigo_delete_payment_receipt', error);
       }

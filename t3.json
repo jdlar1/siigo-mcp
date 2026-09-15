@@ -1,0 +1,11 @@
+{
+  "$schema": "https://t3.codes/schema/t3.json",
+  "scripts": [
+    {
+      "name": "Setup Worktree",
+      "command": "if command -v git-worktree-share >/dev/null 2>&1; then git-worktree-share --worktree .; fi && CI=true pnpm install --frozen-lockfile --prefer-offline",
+      "icon": "configure",
+      "runOnWorktreeCreate": true
+    }
+  ]
+}

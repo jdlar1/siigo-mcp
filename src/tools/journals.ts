@@ -34,7 +34,7 @@ export function registerJournalTools({ server, client }: ToolContext) {
     },
     async (args, extra) => {
       try {
-        return jsonResult(await client.getJournals(args, { signal: extra.signal }));
+        return jsonResult(await client.getJournals(args, { signal: extra.mcpReq.signal }));
       } catch (error) {
         return errorResult('siigo_get_journals', error);
       }
@@ -52,7 +52,7 @@ export function registerJournalTools({ server, client }: ToolContext) {
     },
     async ({ id }, extra) => {
       try {
-        return jsonResult(await client.getJournal(id, { signal: extra.signal }));
+        return jsonResult(await client.getJournal(id, { signal: extra.mcpReq.signal }));
       } catch (error) {
         return errorResult('siigo_get_journal', error);
       }
@@ -71,7 +71,7 @@ export function registerJournalTools({ server, client }: ToolContext) {
     },
     async ({ journal, idempotency_key }, extra) => {
       try {
-        return jsonResult(await client.createJournal(journal, { idempotencyKey: idempotency_key, signal: extra.signal }));
+        return jsonResult(await client.createJournal(journal, { idempotencyKey: idempotency_key, signal: extra.mcpReq.signal }));
       } catch (error) {
         return errorResult('siigo_create_journal', error);
       }

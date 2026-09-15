@@ -5,6 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [5.0.0] - Unreleased
+
+### Breaking changes
+
+- Require Node 24 LTS and migrate to MCP TypeScript SDK v2 packages.
+- Make the task-oriented compact catalog the default. Existing direct tool names remain available through `SIIGO_TOOL_PROFILE=legacy` and the separate `legacy-server` library entry.
+
+### Added
+
+- On-demand discovery and validated execution of all existing operations, with separate read, write, and destructive executors.
+- Domain-level lazy loading and a per-client registry reused across HTTP requests.
+- Combined search, document/file retrieval, catalogs and reports; common invoice preparation that reports ambiguous references without writing.
+- Modern MCP stdio/HTTP handling alongside legacy protocol compatibility.
+- Coverage, schema-size, lazy-loading, cancellation, and task tests. See [migration instructions](docs/COMPACT_TOOLS.md).
+
 ## [4.0.0] - 2026-08-26
 
 ### Breaking changes

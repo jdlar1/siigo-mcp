@@ -1,11 +1,10 @@
 import { spawnSync } from 'node:child_process';
 import { readFile } from 'node:fs/promises';
 import { afterEach, describe, expect, test } from '@jest/globals';
-import { Client } from '@modelcontextprotocol/sdk/client/index.js';
-import { InMemoryTransport } from '@modelcontextprotocol/sdk/inMemory.js';
+import { Client, InMemoryTransport } from '@modelcontextprotocol/client';
 import { createHttpApp } from '../dist/http-server.js';
+import { createLegacyMcpServer as createMcpServer } from '../dist/legacy-server.js';
 import { errorResult, jsonResult } from '../dist/mcp-results.js';
-import { createMcpServer } from '../dist/mcp-server.js';
 import { SiigoApiError, SiigoClient } from '../dist/siigo-client.js';
 import { PACKAGE_NAME, PACKAGE_VERSION } from '../dist/version.js';
 
@@ -47,8 +46,8 @@ describe('v4 package and MCP architecture', () => {
     const api = await import('../dist/index.js');
 
     expect(api.PACKAGE_NAME).toBe(PACKAGE_NAME);
-    expect(api.PACKAGE_VERSION).toBe('4.0.0');
-    expect(api.createMcpServer).toBe(createMcpServer);
+    expect(api.PACKAGE_VERSION).toBe(PACKAGE_VERSION);
+    expect(api.createMcpServer).toBe((await import('../dist/mcp-server.js')).createMcpServer);
     expect(api.SiigoClient).toBe(SiigoClient);
 
     const schemas = await import('../dist/schemas/index.js');
