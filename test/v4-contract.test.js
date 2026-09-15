@@ -330,7 +330,13 @@ describe('v4 Siigo contract boundaries', () => {
     expect(invoiceBatchResponseSchema.safeParse({ status: 'Received' }).success).toBe(false);
   });
 
-  test('propagates idempotency keys and retries transient idempotent failures', async () => {
+  test.each([
+    ['createInvoice', '/v1/invoices'],
+    ['createCreditNote', '/v1/credit-notes'],
+    ['createJournal', '/v1/journals'],
+    ['createVoucher', '/v1/vouchers'],
+    ['createMiscIncomeVoucher', '/v1/vouchers'],
+  ])('%s preserves a supported idempotency key when retrying', async (method, url) => {
     authenticateSuccessfully();
     const transientFailure = {
       isAxiosError: true,
@@ -344,18 +350,55 @@ describe('v4 Siigo contract boundaries', () => {
     mockAxiosInstance.request.mockRejectedValueOnce(transientFailure).mockResolvedValueOnce({ data: { id: 'invoice-1' } });
 
     const client = new SiigoClient(clientConfig);
-    const result = await client.createInvoice({ document: { id: 1 } }, { idempotencyKey: 'invoice123' });
+    const result = await client[method]({ document: { id: 1 } }, { idempotencyKey: 'invoice123' });
 
     expect(result).toEqual({ id: 'invoice-1' });
     expect(mockAxiosInstance.request).toHaveBeenCalledTimes(2);
     expect(mockAxiosInstance.request).toHaveBeenLastCalledWith(
       expect.objectContaining({
         method: 'POST',
-        url: '/v1/invoices',
+        url,
         data: { document: { id: 1 } },
         headers: { 'Idempotency-Key': 'invoice123' },
       }),
     );
+  });
+
+  test.each([
+    ['getInvoice', ['invoice-1']],
+    ['updateInvoice', ['invoice-1', {}]],
+    ['deleteInvoice', ['invoice-1']],
+    ['createPurchase', [{}]],
+    ['createProduct', [{}]],
+    ['createInvoiceBatch', [{}]],
+    ['sendInvoiceByEmail', ['invoice-1', {}]],
+    ['getTrialBalance', [{}]],
+  ])('%s rejects unsupported idempotency before authentication or a write', async (method, args) => {
+    const client = new SiigoClient(clientConfig);
+    await expect(client[method](...args, { idempotencyKey: 'key123' })).rejects.toThrow('idempotencyKey is supported only');
+    expect(mockAxiosInstance.post).not.toHaveBeenCalled();
+    expect(mockAxiosInstance.request).not.toHaveBeenCalled();
+  });
+
+  test.each(['', 'invalid-key', 'key with spaces', 'A'.repeat(31)])('rejects invalid direct-client idempotency key %j', async (key) => {
+    const client = new SiigoClient(clientConfig);
+    await expect(client.createInvoice({}, { idempotencyKey: key })).rejects.toThrow();
+    expect(mockAxiosInstance.post).not.toHaveBeenCalled();
+    expect(mockAxiosInstance.request).not.toHaveBeenCalled();
+  });
+
+  test.each(['createInvoice', 'createPurchase'])('%s does not retry an unprotected write and preserves upstream errors', async (method) => {
+    authenticateSuccessfully();
+    const details = { Errors: [{ Code: 'documents_service', Message: 'Service unavailable' }] };
+    mockAxiosInstance.request.mockRejectedValue({
+      isAxiosError: true,
+      message: 'Service unavailable',
+      response: { status: 503, headers: { 'retry-after': '0' }, data: details },
+    });
+    const client = new SiigoClient(clientConfig);
+    await expect(client[method]({})).rejects.toMatchObject({ status: 503, response: details });
+    expect(mockAxiosInstance.request).toHaveBeenCalledTimes(1);
+    expect(mockAxiosInstance.request.mock.calls[0][0].headers).toBeUndefined();
   });
 
   test('stops before the HTTP request when the caller signal is already aborted', async () => {

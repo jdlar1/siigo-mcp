@@ -232,6 +232,51 @@ function preparationClient() {
 }
 
 describe('invoice task', () => {
+  test.each([
+    [{ automatic_number: false, consecutive: 42 }, 'number'],
+    [{ cost_center_mandatory: true, cost_center_default: 7 }, 'cost_center'],
+    [{ healthcare_company: true }, 'healthcare_company'],
+  ])('reports document requirements %j without producing an executable invoice', async (settings, field) => {
+    const siigo = preparationClient();
+    siigo.getDocumentTypes.mockResolvedValue([{ id: 1, type: 'FV', active: true, ...settings }]);
+    const client = await connect(siigo);
+    const result = await call(client, 'siigo_prepare_invoice', preparation);
+    expect(result.isError).not.toBe(true);
+    expect(result.structuredContent.result).toMatchObject({
+      ready: false,
+      unresolved: [{ field, message: expect.stringContaining('siigo_create_invoice') }],
+    });
+    expect(result.structuredContent.result.invoice).toBeUndefined();
+    expect(siigo.createInvoice).not.toHaveBeenCalled();
+  });
+
+  test('requires each item seller when configured and preserves caller-selected sellers', async () => {
+    const siigo = preparationClient();
+    siigo.getDocumentTypes.mockResolvedValue([{ id: 1, type: 'FV', active: true, seller_by_item: true }]);
+    const client = await connect(siigo);
+    const items = [{ ...preparation.items[0], seller: 9 }, { ...preparation.items[0] }];
+    const rejected = await call(client, 'siigo_prepare_invoice', { ...preparation, items });
+    expect(rejected.structuredContent.result).toMatchObject({ ready: false, unresolved: [{ field: 'items.1.seller' }] });
+    expect(rejected.structuredContent.result.invoice).toBeUndefined();
+
+    items[1].seller = 10;
+    const prepared = await call(client, 'siigo_prepare_invoice', { ...preparation, items });
+    expect(prepared.structuredContent.result).toMatchObject({ ready: true, invoice: { seller: 1, items } });
+    expect(siigo.createInvoice).not.toHaveBeenCalled();
+  });
+
+  test('does not apply settings from an ambiguous document selection', async () => {
+    const siigo = preparationClient();
+    siigo.getDocumentTypes.mockResolvedValue([
+      { id: 1, type: 'FV', active: true, automatic_number: false },
+      { id: 2, type: 'FV', active: true, healthcare_company: true },
+    ]);
+    const client = await connect(siigo);
+    const result = await call(client, 'siigo_prepare_invoice', preparation);
+    expect(result.structuredContent.result.unresolved.map(({ field }) => field)).toEqual(['document']);
+    expect(result.structuredContent.result.ready).toBe(false);
+  });
+
   test('prepares without writing, then creates with idempotency and cancellation intact', async () => {
     const siigo = preparationClient();
     const client = await connect(siigo);

@@ -113,6 +113,13 @@ payment references. Missing or ambiguous references return `ready: false` and
 Reference lookups stop with an error after ten pages rather than treating a
 truncated search as a unique match.
 
+The selected document's settings are checked for manual numbering, mandatory cost
+centers, healthcare fields, and item-level sellers. Manual numbering, mandatory
+cost centers, or healthcare requirements return `ready: false`: supply those
+fields in a complete payload to `siigo_create_invoice`. The helper does not choose
+a consecutive number or a default cost center. When item-level sellers are
+required, provide `seller` on every item and run preparation again.
+
 A successful response contains `ready: true` and a locally validated `invoice`.
 Pass it to `siigo_create_invoice` with an optional `idempotency_key`. Preparation
 never creates a customer, product, or invoice. It does not calculate prices,
