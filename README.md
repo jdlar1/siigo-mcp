@@ -6,7 +6,7 @@ A Model Context Protocol (MCP) server that provides full integration with the Si
   <img width="380" height="200" src="https://glama.ai/mcp/servers/@jdlar1/siigo-mcp/badge" alt="Siigo MCP Server" />
 </a>
 
-**v6.0.0** — Eight task-oriented tools with on-demand access to all 71 operations. Prepare invoices, quotations, purchases, and cash receipts; create all eight document kinds through one validated tool. Search and inspect records, with separate read, write, and destructive executors. Requires Node 24 or newer. See the [v6 migration guide](docs/COMPACT_TOOLS.md#migration-from-v5).
+**v6.0.1** — Eight task-oriented tools with on-demand access to all 71 operations. Prepare invoices, quotations, purchases, and cash receipts; create all eight document kinds through one validated tool. Search and inspect records, with separate read, write, and destructive executors. Requires Node 24 or newer. See the [v6 migration guide](docs/COMPACT_TOOLS.md#migration-from-v5). This patch fixes customer search when Siigo returns an address without city codes.
 
 ## Features
 

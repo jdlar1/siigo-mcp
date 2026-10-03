@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [6.0.1] - 2026-10-03
+
+### Fixed
+
+- Return customers whose address city is missing `country_code`, `state_code`, or `city_code` instead of failing `siigo_search` and customer reads for the whole page. Customer input validation remains strict. ([#6](https://github.com/jdlar1/siigo-mcp/issues/6))
+
 ## [6.0.0] - 2026-09-15
 
 ### Breaking changes
