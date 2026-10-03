@@ -134,6 +134,21 @@ describe('compact tool surface', () => {
     expect(getProducts).toHaveBeenCalledWith({ code: 'ABC', page: 2, page_size: 10 }, { signal: expect.any(AbortSignal) });
   });
 
+  test('returns customers whose address has incomplete city codes', async () => {
+    const data = page([
+      { id, address: { address: 'Calle 1', city: { country_code: 'Co', state_code: '11', city_code: '11001' } } },
+      { id, address: { address: 'Calle 2', city: { country_name: 'Colombia' } } },
+      { id, address: { address: 'Calle 3', city: { country_code: 'Co', state_code: null, city_code: null } } },
+    ]);
+    const getCustomers = jest.fn().mockResolvedValue(data);
+    const client = await connect({ getCustomers });
+    const result = await call(client, 'siigo_search', {
+      query: { entity: 'customers', mode: 'list', filters: { page: 1, page_size: 3 } },
+    });
+    expect(result.isError).not.toBe(true);
+    expect(result.structuredContent).toEqual({ result: data });
+  });
+
   test('rejects wrong executor kinds and malformed arguments before touching Siigo', async () => {
     const deleteProduct = jest.fn().mockResolvedValue({ id, deleted: true });
     const client = await connect({ deleteProduct });
