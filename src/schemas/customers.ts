@@ -123,11 +123,11 @@ export const customerReferenceSchema = z
 
 const customerResponseCitySchema = z
   .object({
-    country_code: z.string(),
+    country_code: z.string().nullish(),
     country_name: z.string().optional(),
-    state_code: z.string(),
+    state_code: z.string().nullish(),
     state_name: z.string().optional(),
-    city_code: z.string(),
+    city_code: z.string().nullish(),
     city_name: z.string().optional(),
   })
   .passthrough();
